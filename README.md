@@ -3,7 +3,7 @@
 
 ## Overview
 
-This software plots constituency trees and dependency trees given by strings, using both the [id-tree](https://crates.io/crates/id_tree) crate and [plotters](https://crates.io/crates/plotters). While primarily written with linguistic syntax in mind, it can serve other inputs, such as mathematical expressions etc. The API first transforms the input to an internal conll / tree, then plots the structure with recursion. It is mostly suitable for short sentences of up to 15-20 tokens.
+This repo plots constituency trees and dependency trees given by strings, using both the [id-tree](https://crates.io/crates/id_tree) crate and [plotters](https://crates.io/crates/plotters). While primarily written with linguistic syntax in mind, it can serve other inputs, such as mathematical expressions etc. The API first transforms the input to an internal conll / tree, then plots the structure with recursion. It is mostly suitable for short sentences of up to 15-20 tokens.
 
 ## Input-Output
 
@@ -91,16 +91,15 @@ conll2plot.build(save_to);
 
 ### Multiple inputs via file
 
+You can use multiple inputs of the same type in a file, through the command line, as follows:
+cargo run INPUT_TYPE INPUT_FILE OUTPUT_PATH
+when:
+INPUT_TYPE should be replaced with "c" for constituency or "d" for dependency.
+INPUT_FILE should be replaced with a path to a txt file with inputs.
+OUTPUT_PATH should be replaced with a path to a requested output dir.
 
-// You can use multiple inputs of the same type, given in a file through the command line.
-// cargo run INPUT_TYPE INPUT_FILE OUTPUT_PATH
-// when:
-// INPUT_TYPE should be replaced with "c" for constituency or "d" for dependency.
-// INPUT_FILE should be replaced with a path to a txt file with inputs.
-// OUTPUT_PATH should be replaced with a path to a requested output location.
-
-// for example: cargo run c constituencies.txt Output
-// It will saves png images of constituency trees drawn for the inputs in constituencies.txt, in an Output dir location.
+For example: cargo run c constituencies.txt Output
+Will save png images of constituency trees drawn for the inputs in constituencies.txt, in an Output dir.
 
 
 #### Constituency
