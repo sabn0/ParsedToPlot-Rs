@@ -95,9 +95,7 @@ conll2plot.build(save_to);
 
 You can use multiple inputs of the same type in a file, through the command line, as follows:
 
-```rust
-cargo run INPUT_TYPE INPUT_FILE OUTPUT_PATH
-```
+/* ``` cargo run INPUT_TYPE INPUT_FILE OUTPUT_PATH``` */
 
 when:
 * INPUT_TYPE should be replaced with "c" for constituency or "d" for dependency.
@@ -106,9 +104,8 @@ when:
 
 For example:
 
-```rust
-cargo run c constituencies.txt Output
-```
+/* ```cargo run c constituencies.txt Output```*/
+
 
 Will save png images of constituency trees drawn for the inputs in constituencies.txt, in an Output dir.
 
@@ -126,10 +123,10 @@ use std::env;
 
 // collect arguments from command line
 let args: Vec<String> = env::args().collect();
-// note: your command line args should translate to something like the following:
+// note: your command line args should translate to something similar to the following:
 // let args: Vec<String> = ["PROGRAM_NAME", "c", "Input/constituencies.txt", "ConOutput"].map(|x| x.to_string()).to_vec();
 
-// run configuration protocol and inpectations
+// run configuration protocol and inspectations
 let sequences = match Config::new(&args) {
     Ok(sequences) => Vec::<String>::try_from(sequences).unwrap(),
     Err(config) => panic!("{}", config)
@@ -166,10 +163,10 @@ use std::env;
 
 // collect arguments from command line
 let args: Vec<String> = env::args().collect();
-// note: your command line args should translate to something like the following:
+// note: your command line args should translate to something similar to the following:
 // let args: Vec<String> = ["PROGRAM_NAME", "d", "Input/conll.txt", "DepOutput"].map(|x| x.to_string()).to_vec();
 
-// run configuration protocol and inpectations
+// run configuration protocol and inspectations
 let sequences = match Config::new(&args) {
     Ok(sequences) => Vec::<Vec<String>>::try_from(sequences).unwrap(),
     Err(config) => panic!("{}", config)
@@ -201,3 +198,5 @@ I made two demo examples with [spaCy](https://spacy.io/) and [Berkeley Neural Pa
 Under MIT license.
 
 
+
+License: MIT

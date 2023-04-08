@@ -93,9 +93,7 @@
 //! 
 //! You can use multiple inputs of the same type in a file, through the command line, as follows:
 //! 
-//! ```
-//! cargo run INPUT_TYPE INPUT_FILE OUTPUT_PATH
-//! ```
+//! /* ``` cargo run INPUT_TYPE INPUT_FILE OUTPUT_PATH``` */
 //! 
 //! when:
 //! * INPUT_TYPE should be replaced with "c" for constituency or "d" for dependency.
@@ -104,16 +102,15 @@
 //! 
 //! For example:
 //! 
-//! ```
-//! cargo run c constituencies.txt Output
-//! ```
+//! /* ```cargo run c constituencies.txt Output```*/
+//! 
 //! 
 //! Will save png images of constituency trees drawn for the inputs in constituencies.txt, in an Output dir.
 //!  
 //! 
 //! ### Constituency
 //! 
-//! ```
+//! ```ignore
 //! 
 //! use parsed_to_plot::Config;
 //! use parsed_to_plot::String2Tree;
@@ -153,7 +150,7 @@
 //! 
 //! ### Dependency
 //! 
-//! ```
+//! ```ignore
 //! 
 //! use parsed_to_plot::Config;
 //! use parsed_to_plot::String2Conll;
