@@ -193,11 +193,11 @@ for (i, mut dependency) in sequences.into_iter().enumerate() {
 
 ```
 
-### References
+## References
 I used the crates: [id-tree](https://crates.io/crates/id_tree), [plotters](https://crates.io/crates/plotters).
 I made two demo examples with [spaCy](https://spacy.io/) and [Berkeley Neural Parser](https://pypi.org/project/benepar/), slightly changed POS names.
 
-### License
+## License
 Under MIT license.
 
 
