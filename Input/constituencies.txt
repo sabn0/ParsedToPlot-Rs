@@ -1,0 +1,2 @@
+(S (NP (det The) (N people)) (VP (V watch) (NP (det the) (N game))))
+(S (NP (det That)) (VP (V is) (NP (NP (det another) (N sentence)) (ADVP (adj here)))))
