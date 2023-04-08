@@ -138,6 +138,17 @@ impl Config {
     }
 
     ///
+    /// Crate an output directory as requested if possible
+    /// 
+    pub fn make_out_dir(out_dir: &String) -> Result<(), String> {
+        match fs::create_dir_all(out_dir) {
+            Ok(()) => Ok(()),
+            Err(e) => return Err(format!("create_dir_all error: {}", e.to_string()))
+        }
+    }
+
+
+    ///
     /// The Config trait receives the command line array of inputs and parses it.
     /// Expects 3 arguments : Letter selector, Input text file, Requested output path to save png images.
     /// Returns a Result over Input type.
@@ -155,11 +166,7 @@ impl Config {
         }
 
         // load output directory path and try to create:
-        let out_dir_path = &args[3];
-        match fs::create_dir_all(out_dir_path) {
-            Ok(()) => {},
-            Err(e) => return Err(format!("create_dir_all error: {}", e.to_string()))
-        }
+        Config::make_out_dir(&args[3])?;
 
         // load inputs
         if CONSTITUENCY == args[1] {

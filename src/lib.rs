@@ -33,6 +33,7 @@
 //! // The people watch the game
 //! // (S (NP (det The) (N people)) (VP (V watch) (NP (det the) (N game))))
 //! 
+//! use parsed_to_plot::Config;
 //! use parsed_to_plot::String2Tree;
 //! use parsed_to_plot::Tree2Plot;
 //! use parsed_to_plot::String2StructureBuilder;
@@ -45,6 +46,7 @@
 //! let tree = string2tree.get_structure();
 //! 
 //! // build plot from tree and save
+//! Config::make_out_dir(&"Output".to_string());
 //! let save_to: &str = "Output/constituency_plot.png";
 //! let mut tree2plot: Tree2Plot = Structure2PlotBuilder::new(tree);
 //! tree2plot.build(save_to);
@@ -65,6 +67,7 @@
 //! //  4	game	game	NOUN	_	_	2	dobj	_	_
 //! 
 //! 
+//! use parsed_to_plot::Config;
 //! use parsed_to_plot::String2Conll;
 //! use parsed_to_plot::Conll2Plot;
 //! use parsed_to_plot::String2StructureBuilder;
@@ -83,6 +86,7 @@
 //! let tree = conll2tree.get_structure();
 //! 
 //! // build plot from tree and save
+//! Config::make_out_dir(&"Output".to_string());
 //! let save_to: &str = "Output/dependency_plot.png";
 //! let mut conll2plot: Conll2Plot = Structure2PlotBuilder::new(tree);
 //! conll2plot.build(save_to);

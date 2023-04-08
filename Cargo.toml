@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "plots constituency trees and dependency trees given by strings."
+repository = "https://github.com/Sabn0/ParsedToPlot-Rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
