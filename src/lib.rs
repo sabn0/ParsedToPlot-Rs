@@ -89,9 +89,9 @@
 //! 
 //! ## Multiple inputs via file 
 //! 
-//! You can use multiple inputs of the same type in a file, through the command line, as follows:
-//! ``` cargo run INPUT_TYPE INPUT_FILE OUTPUT_PATH ```
-//! when:
+//! You can use multiple inputs of the same type in a file, through the command line, as follows:/
+//! ``` cargo run INPUT_TYPE INPUT_FILE OUTPUT_PATH ```/
+//! when:/
 //! * INPUT_TYPE should be replaced with "c" for constituency or "d" for dependency.
 //! * INPUT_FILE should be replaced with a path to a txt file with inputs.
 //! * OUTPUT_PATH should be replaced with a path to a requested output dir.
