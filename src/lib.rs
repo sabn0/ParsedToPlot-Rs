@@ -184,18 +184,15 @@
 //! }
 //! 
 //! ```
-//!
-//! ```
-//! 
-//! # References
-//! I used the crates: [id-tree](https://crates.io/crates/id_tree), [plotters](https://crates.io/crates/plotters).
-//! I made two demo examples with [spaCy](https://spacy.io/) and [Berkeley Neural Parser](https://pypi.org/project/benepar/), slightly changed POS names.
-//! 
-//! # License
-//! Under MIT license.
-//! 
-//! ```
-//! 
+///
+/// # References
+/// I used the crates: [id-tree](https://crates.io/crates/id_tree), [plotters](https://crates.io/crates/plotters).
+/// I made two demo examples with [spaCy](https://spacy.io/) and [Berkeley Neural Parser](https://pypi.org/project/benepar/), slightly changed POS names.
+/// 
+/// # License
+/// Under MIT license.
+///
+/// 
 
 mod config;
 mod string_2_conll;
@@ -203,6 +200,7 @@ mod conll_2_plot;
 mod string_2_tree;
 mod tree_2_plot;
 mod generic_traits;
+
 
 pub use config::Config;
 pub use config::Input;
