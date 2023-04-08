@@ -1,5 +1,6 @@
-# parsed_to_plot
+![AppVeyor](https://img.shields.io/appveyor/build/Sabn0/ParsedToPlot-Rs)
 
+# parsed_to_plot
 
 'parsed_to_plot' plots constituency trees and dependency trees given by strings.
 
