@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 id_tree = "1.8.0"
 plotters = "0.3.4"
+license = "MIT"
+description = plots constituency trees and dependency trees given by strings.
