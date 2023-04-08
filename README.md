@@ -16,11 +16,10 @@ representing, for example, mathematical expressions.
 presented in a new line. Sentences are separated by an empty line. (see an example below, using the output of
 [spaCy](https://spacy.io/) in python).
 * For multiple inputs of the same type, the program will expect 3 arguments from the command line :
-```rust
-// input type ("c" = constituency / "d" = dependency), String
-// input file path, String
-// output path, String
-```
+    * input type ("c" = constituency / "d" = dependency), String
+    * input file path, String
+    * output path, String
+
 See an example below.
 
 ## Usage examples
@@ -46,7 +45,7 @@ string2tree.build(&mut constituency).unwrap(); // build the tree from the string
 let tree = string2tree.get_structure();
 
 // build plot from tree and save
-let save_to: &str = "constituency_plot.png";
+let save_to: &str = "Output/constituency_plot.png";
 let mut tree2plot: Tree2Plot = Structure2PlotBuilder::new(tree);
 tree2plot.build(save_to);
 
@@ -54,15 +53,17 @@ tree2plot.build(save_to);
 
 ### Dependency
 
-This is an example for a simple dependency tree of the sentence:
-The people watch the game
-0   The the det _   _   1   det   _   _
-1	people	people	NOUN	_	_	2	nsubj	_	_
-2	watch	watch	VERB	_	_	2	ROOT	_	_
-3	the	the	DET	_	_	4	det	_	_
-4	game	game	NOUN	_	_	2	dobj	_	_
+This example shows how to use the API in order to produce a png from a single sentence in conll.
 
 ```rust
+
+// The people watch the game
+//  0   The the det _   _   1   det   _   _
+//  1	people	people	NOUN	_	_	2	nsubj	_	_
+//  2	watch	watch	VERB	_	_	2	ROOT	_	_
+//  3	the	the	DET	_	_	4	det	_	_
+//  4	game	game	NOUN	_	_	2	dobj	_	_
+
 
 use parsed_to_plot::String2Conll;
 use parsed_to_plot::Conll2Plot;
@@ -82,7 +83,7 @@ conll2tree.build(&mut dependency).unwrap(); // build the conll from the vector o
 let tree = conll2tree.get_structure();
 
 // build plot from tree and save
-let save_to: &str = "dependency_plot.png";
+let save_to: &str = "Output/dependency_plot.png";
 let mut conll2plot: Conll2Plot = Structure2PlotBuilder::new(tree);
 conll2plot.build(save_to);
 
