@@ -93,7 +93,9 @@
 //! 
 //! You can use multiple inputs of the same type in a file, through the command line, as follows:
 //! 
-//! ```text cargo run INPUT_TYPE INPUT_FILE OUTPUT_PATH ```
+//! ```text
+//! cargo run INPUT_TYPE INPUT_FILE OUTPUT_PATH
+//! ```
 //! 
 //! when:
 //! * INPUT_TYPE should be replaced with "c" for constituency or "d" for dependency.
@@ -102,7 +104,9 @@
 //! 
 //! For example:
 //! 
-//! ```text cargo run c constituencies.txt Output ```
+//! ```text
+//! cargo run c constituencies.txt Output 
+//! ```
 //! 
 //! 
 //! Will save png images of constituency trees drawn for the inputs in constituencies.txt, in an Output dir.
