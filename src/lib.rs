@@ -1,34 +1,36 @@
 //! 
 //! # Overview
 //! 
-//! This software plots constituency tress and dependency trees given in strings, using both the id-tree crate
-//! [id-tree](https://crates.io/crates/id_tree) and [plotters](https://crates.io/crates/plotters).
-//! The program was written with linguistic syntax in mind, but can work on any input (such as mathematical expressions etc).
+//! This software plots constituency trees and dependency trees given by strings, using both the [id-tree](https://crates.io/crates/id_tree) crate and [plotters](https://crates.io/crates/plotters). While primarily written with linguistic syntax in mind, it can serve other inputs, such as mathematical expressions etc. The API first transforms the input to an internal conll / tree, then plots the structure with recursion. It is mostly suitable for short sentences of up to 15-20 tokens.
 //! 
-//! * The API expects a string input. Multiple inputs can also be delivered via the command-line in a file.
-//! * For constituency trees, the program takes one-liners, parsed strings. These strings can be syntactic, for example
-//! such that represent phrases and part-of-speech (like the structure of [Berkeley Neural Parser](https://pypi.org/project/benepar/)
-//! in python). Such strings will have "double leaves" (see an example below). Alternatively, the strings can be regular,
-//! representing for example mathematical expressions.
+//! # Input-Output
+//! 
+//! * The API expects a string input. Multiple string inputs can be delivered in a file, through the command-line.
+//! * For constituency trees, the program takes a parsed string given in one line. The string can be syntactic, for example
+//! such that represents phrases and parts-of-speech (like the structure in [Berkeley Neural Parser](https://pypi.org/project/benepar/)
+//! in python). Such strings will have "double leaves" (see an example below). Alternatively, the strings can have singular leaves,
+//! representing, for example, mathematical expressions.
 //! * For dependency trees, the programs takes a conll format, in which every token has 10 fields, separated by tab, and
-//! presented in a new line. Sentences are separated by an empty line. (see an example below using the output of
+//! presented in a new line. Sentences are separated by an empty line. (see an example below, using the output of
 //! [spaCy](https://spacy.io/) in python). 
-//! * For multiple inputs, the program will expect 3 arguments from the command line : input type (constituency or dependency),
-//! input file path, output path. The inputs will be of the same type. See an example below.
-//! * The API first transforms the input to an internal conll / tree, then plots the structure with recursion. It is mostly
-//! suitable for short sentences of up to 15-20 tokens. 
+//! * For multiple inputs of the same type, the program will expect 3 arguments from the command line :
+//! ```
+//! // input type ("c" = constituency / "d" = dependency), String
+//! // input file path, String
+//! // output path, String
+//! ``` 
+//! See an example below. 
 //! 
-//!
-//!
-   
-//! # Examples
+//! # Usage examples
 //! ## Constituency
 //! 
-//! This is an example for a simple constituency tree of the sentence: 
-//! The people watch the game
-//! (S (NP (det The) (N people)) (VP (V watch) (NP (det the) (N game))))
+//! This example shows how to use the API in order to produce a png from a single parsed constituency string.
 //! 
 //! ```
+//! 
+//! // Example sentence: 
+//! // The people watch the game
+//! // (S (NP (det The) (N people)) (VP (V watch) (NP (det the) (N game))))
 //! 
 //! use parsed_to_plot::String2Tree;
 //! use parsed_to_plot::Tree2Plot;
