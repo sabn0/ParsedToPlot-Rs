@@ -92,13 +92,18 @@ conll2plot.build(save_to);
 ### Multiple inputs via file
 
 You can use multiple inputs of the same type in a file, through the command line, as follows:\
-``` cargo run INPUT_TYPE INPUT_FILE OUTPUT_PATH ```\
-when:\
+
+```cargo run INPUT_TYPE INPUT_FILE OUTPUT_PATH```\
+
+when:
 * INPUT_TYPE should be replaced with "c" for constituency or "d" for dependency.
 * INPUT_FILE should be replaced with a path to a txt file with inputs.
 * OUTPUT_PATH should be replaced with a path to a requested output dir.
 
-For example: cargo run c constituencies.txt Output
+For example:\
+
+```cargo run c constituencies.txt Output```\
+
 Will save png images of constituency trees drawn for the inputs in constituencies.txt, in an Output dir.
 
 
