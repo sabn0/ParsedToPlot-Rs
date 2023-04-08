@@ -1,7 +1,9 @@
 //! 
+//! 'parsed_to_plot' plots constituency trees and dependency trees given by strings.
+//! 
 //! # Overview
 //! 
-//! This repo plots constituency trees and dependency trees given by strings, using both the [id-tree](https://crates.io/crates/id_tree) crate and [plotters](https://crates.io/crates/plotters) crate. While primarily written with linguistic syntax in mind, it can serve other inputs, such as mathematical expressions etc. The API first transforms the input to an internal conll / tree, then plots the structure recursively. It is mostly suitable for short sentences of up to 15-20 tokens. I wrote this in order to get familiar with Rust and decided to upload it if it can help others.
+//! The code uses both the [id-tree](https://crates.io/crates/id_tree) crate and [plotters](https://crates.io/crates/plotters) crate. While primarily written with linguistic syntax in mind, it can serve other inputs, such as mathematical expressions etc. The API first transforms the input to an internal conll / tree, then plots the structure recursively. It is mostly suitable for short sentences of up to 15-20 tokens. I wrote this in order to get familiar with Rust and decided to upload it if it can help others.
 //! 
 //! # Input-Output
 //! 
