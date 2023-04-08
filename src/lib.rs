@@ -1,5 +1,5 @@
 //! 
-//! 'parsed_to_plot' plots constituency trees and dependency trees given by strings.
+//! Plots constituency trees and dependency trees given by strings.
 //! 
 //! # Overview
 //! 
