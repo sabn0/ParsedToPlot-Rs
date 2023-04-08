@@ -93,7 +93,9 @@ conll2plot.build(save_to);
 
 You can use multiple inputs of the same type in a file, through the command line, as follows:
 
-```cargo run INPUT_TYPE INPUT_FILE OUTPUT_PATH```
+```rust
+cargo run INPUT_TYPE INPUT_FILE OUTPUT_PATH
+```
 
 when:
 * INPUT_TYPE should be replaced with "c" for constituency or "d" for dependency.
@@ -102,9 +104,11 @@ when:
 
 For example:
 
-```cargo run c constituencies.txt Output```
+```rust
+cargo run c constituencies.txt Output
+```
 
-Will save png images of constituency trees drawn for the inputs in ```constituencies.txt```, in an ```Output``` dir.
+Will save png images of constituency trees drawn for the inputs in constituencies.txt, in an Output dir.
 
 
 #### Constituency
@@ -187,12 +191,11 @@ for (i, mut dependency) in sequences.into_iter().enumerate() {
 
 ```
 
-## References
+### References
 I used the crates: [id-tree](https://crates.io/crates/id_tree), [plotters](https://crates.io/crates/plotters).
 I made two demo examples with [spaCy](https://spacy.io/) and [Berkeley Neural Parser](https://pypi.org/project/benepar/), slightly changed POS names.
- 
-## License
-Under MIT license. 
 
+### License
+Under MIT license.
 
 
