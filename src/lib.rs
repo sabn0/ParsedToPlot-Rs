@@ -24,11 +24,11 @@
 //! # Examples
 //! ## Constituency
 //! 
-//! ```
+//! This is an example for a simple constituency tree of the sentence: 
+//! The people watch the game
+//! (S (NP (det The) (N people)) (VP (V watch) (NP (det the) (N game))))
 //! 
-//! // This is an example for a simple constituency tree of the sentence: 
-//! // The people watch the game
-//! // (S (NP (det The) (N people)) (VP (V watch) (NP (det the) (N game))))
+//! ```
 //! 
 //! use parsed_to_plot::String2Tree;
 //! use parsed_to_plot::Tree2Plot;
@@ -50,15 +50,15 @@
 //! 
 //! ## Dependency  
 //! 
-//! ```
+//! This is an example for a simple dependency tree of the sentence:
+//! The people watch the game
+//! 0   The the det _   _   1   det   _   _
+//! 1	people	people	NOUN	_	_	2	nsubj	_	_
+//! 2	watch	watch	VERB	_	_	2	ROOT	_	_
+//! 3	the	the	DET	_	_	4	det	_	_
+//! 4	game	game	NOUN	_	_	2	dobj	_	_
 //! 
-//! // This is an example for a simple dependency tree of the sentence:
-//! // The people watch the game
-//! // 0   The the det _   _   1   det   _   _
-//! // 1	people	people	NOUN	_	_	2	nsubj	_	_
-//! // 2	watch	watch	VERB	_	_	2	ROOT	_	_
-//! // 3	the	the	DET	_	_	4	det	_	_
-//! // 4	game	game	NOUN	_	_	2	dobj	_	_
+//! ```
 //! 
 //! use parsed_to_plot::String2Conll;
 //! use parsed_to_plot::Conll2Plot;
@@ -83,7 +83,6 @@
 //! conll2plot.build(save_to);
 //! 
 //! ```
-//! 
 //! 
 //! ## Multiple inputs via file 
 //! 
