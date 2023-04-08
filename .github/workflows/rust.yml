@@ -1,7 +1,7 @@
 name: build-and-test
 run-name: build-and-test
 on: [push]
-env: CARGO_TERM_COLOR=always: always
+env: CARGO_TERM_COLOR: always
 jobs:
   build-and-test-version:
     runs-on: ubuntu-latest
