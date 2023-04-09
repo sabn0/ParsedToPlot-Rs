@@ -204,7 +204,3 @@ I made two demo examples with [spaCy](https://spacy.io/) and [Berkeley Neural Pa
 
 ## License
 Under MIT license.
-
-
-
-License: MIT
