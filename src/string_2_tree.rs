@@ -306,32 +306,32 @@ mod tests {
     #[test]
     #[should_panic(expected = "Did not find trailing closers")]
     fn missing_closures() {
-        let example = "(S (NP (det";
-        let golden = vec!["S", "NP", "det"];
+        let example = "(S (0 (1";
+        let golden = vec!["S", "0", "1"];
         string2tree_template(example, golden, "pre");
     }
 
     #[test]
     #[should_panic(expected = "The input did not start with root")]
     fn missing_root() {
-        let example = "(NP (det))";
-        let golden = vec!["NP", "det"];
+        let example = "(0 (1))";
+        let golden = vec!["0", "1"];
         string2tree_template(example, golden, "pre");
     }
 
     #[test]
     #[should_panic(expected = "The input did not start with root")]
     fn missing_opening() {
-        let example = "S (NP (det";
-        let golden = vec!["S", "NP", "det"];
+        let example = "S (0 (1";
+        let golden = vec!["S", "0", "1"];
         string2tree_template(example, golden, "pre");
     }
 
     #[test]
     #[should_panic(expected = "inconsistent number of closers and ancestors for node id")]
     fn inconsistent_closers() {
-        let example = "(S (NP)) (det the)";
-        let golden = vec!["VP", "V", "Making"];
+        let example = "(S (0)) (1 2)";
+        let golden = vec!["0", "1", "2"];
         string2tree_template(example, golden, "pre");
     }
 

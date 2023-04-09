@@ -1,10 +1,7 @@
 //!
 //! 
-//! Plots constituency trees and dependency trees given by strings.
+//! Simple program to draw constituency trees and dependency trees from parsed strings. See the [README](https://github.com/Sabn0/ParsedToPlot-Rs) file in github for an overview. 
 //! 
-//! # Overview
-//! 
-//! The code uses both the [id-tree](https://crates.io/crates/id_tree) crate and the [plotters](https://crates.io/crates/plotters) crate. While primarily written with linguistic syntax in mind, it can serve other inputs, such as mathematical expressions etc. The program first transforms the input to a conll / tree, then plots the structure recursively. It is mostly suitable for short parsed sequences of up to 15-20 tokens. The program is a simple drawing program, plots strings that are already parsed. This is not a parser! I wrote this in order to get familiar with Rust and decided to upload it if it can help others.
 //! 
 //! # Input-Output
 //! 
@@ -26,7 +23,7 @@
 //! # Usage examples
 //! ## Constituency
 //! 
-//! This example shows how to use the API in order to produce a png from a single parsed constituency string.
+//! The following example shows how to use the API in order to produce a png from a single parsed constituency string.
 //! 
 //! ```
 //! // Example parsed sentence: 
@@ -52,7 +49,7 @@
 //! 
 //! ## Dependency  
 //! 
-//! This example shows how to use the API in order to produce a png from a single conll format.
+//! The following example shows how to use the API in order to produce a png from a single conll format.
 //! 
 //! ```
 //! // Example conll:
