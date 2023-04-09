@@ -183,7 +183,7 @@
 //! 
 //! # References
 //! * I used the crates: [id-tree](https://crates.io/crates/id_tree), [plotters](https://crates.io/crates/plotters).
-//! * I used [spaCy](https://spacy.io/) to create a couple of examples for illustration.
+//! * I used [spaCy](https://spacy.io/) to create a couple of dependency-parsed examples for illustration.
 //! 
 //! # License
 //! Under MIT license. 
