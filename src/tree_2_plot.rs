@@ -24,11 +24,11 @@ pub struct PlotData {
 }
 
 /*
-Note: Options & Results are mainly handled implicitly during this module.
+Note: Options & Results are mainly handled implicitly (unwrap) during this module.
 The reason is that this module is based on two components:
-1) the output of the string_2_tree module, in which Options & Results 
-are aready handled explictly. 2) Relative simple line series and point series.
- */
+1) The output of string_2_tree, in which Options & Results are aready handled explictly. 
+2) It makes a relative simple line series and point series.
+*/
 
 /// A struct that wraps the needed fileds to plot a tree
  pub struct Tree2Plot {
@@ -39,7 +39,7 @@ are aready handled explictly. 2) Relative simple line series and point series.
 ///
 /// This is a building process of a plot.
 /// Called after using String2Structure.
-/// See lib.rs for usage examples
+/// See lib.rs for usage examples.
 /// 
 impl Structure2PlotBuilder<Tree<String>> for Tree2Plot {
 
@@ -64,10 +64,8 @@ impl Structure2PlotBuilder<Tree<String>> for Tree2Plot {
         let mut plot_data_vec: Vec<PlotData> = Vec::new();
         self.walk(None, None, &mut plot_data_vec);
 
-        // calculate dimensions of plot based on tree height
-        // extract height from tree
+        // calculate dimensions of plot based on tree height and number of leaf-children in sub tree
         let tree_height = self.tree.height();
-
         let tree_length = self.node_id2n_sub_children.get(self.tree.root_node_id().unwrap()).unwrap();
         let height = (DIM_CONST * tree_height / tree_length) as u32;
         let length = (DIM_CONST * tree_length / tree_height) as u32;
@@ -77,7 +75,6 @@ impl Structure2PlotBuilder<Tree<String>> for Tree2Plot {
         // initialization of backend settings
         let root_area = BitMapBackend::new(save_to, fig_dims).into_drawing_area();
         root_area.fill(&WHITE).unwrap();
-    
         let x_spec = std::ops::Range{start:INIT_LEFT_BOUND, end:INIT_RIGHT_BOUND};
         let y_spec = std::ops::Range{start:(tree_height-1) as f32, end: 0.0};
 
@@ -109,16 +106,14 @@ impl Structure2PlotBuilder<Tree<String>> for Tree2Plot {
 }
 
 ///
-/// This is a plotting helper implementation.
-/// The methods should not be called direcly by the user.
-/// See lib.rs for usage examples
+/// This is a plotting helper implementation of the Structure2PlotPlotter trait.
+/// The methods should not be called direcly by the user, rather used by the builder.
 /// 
 impl Structure2PlotPlotter<NodeId, PlotData, Option<PlotData>> for Tree2Plot {
 
     fn plot<'a, DB, CT>(&self, chart: &mut ChartContext<'a, DB, CT>, plot_data_vec: Vec<PlotData>, font_style: (&str, i32)) 
     where DB: DrawingBackend + 'a, CT: CoordTranslate<From = (f32, f32)> {
         
-        // TEXT STYLE
         let text_style = TextStyle::from(font_style)
         .transform(FontTransform::None)
         .font.into_font().style(FontStyle::Bold)
@@ -132,7 +127,7 @@ impl Structure2PlotPlotter<NodeId, PlotData, Option<PlotData>> for Tree2Plot {
             let label = &plot_data.label_arg;
             let [x1, y1, x2, y2]: [f32; 4] = plot_data.positional_args[..4].try_into().unwrap();
 
-            // order matters
+            // order matters - lines before circles before text.
             // plus 0.1 is a workaround for visualization purposes
             chart.draw_series(LineSeries::new(vec![(x1, y1+0.1), (x2, y2-0.1)], &BLACK)).unwrap();
             chart.draw_series(PointSeries::of_element(
@@ -144,7 +139,6 @@ impl Structure2PlotPlotter<NodeId, PlotData, Option<PlotData>> for Tree2Plot {
                     + Circle::new((0, 0), 10, ShapeStyle{color: WHITE.into(), filled: true, stroke_width: 1})
                     + Text::new(format!("{}", label), (0,0), &text_style);
                 },
-                // points + circle on text are correnly a workaround for presentation
             )).unwrap();
         }
     }
@@ -157,7 +151,7 @@ impl Structure2PlotPlotter<NodeId, PlotData, Option<PlotData>> for Tree2Plot {
                 None => panic!("input tree is empty"),
                 Some(root_node_id) => {
                     // get root node label and send with initial positional args to plot
-                    // bounds are set to -+ 5 but this is arbitrary at this point.
+                    // bounds are set to -+ 5 but this is arbitrary and not shown on x axis.
                     let root_node = self.tree.get(root_node_id).unwrap();
                     let root_node_data = root_node.data();
                     let root_plot_args = PlotData {

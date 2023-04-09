@@ -3,14 +3,13 @@
 // Under MIT license
 //
 
-
 use crate::String2StructureBuilder;
 
 const CONLL_SIZE: usize = 10;
 
 /// A struct that wraps the -needed- fields to draw a token
 /// The token struct and impl are not used by the user, rather
-/// The sequence implementation
+/// The String2Conll implementation
 #[derive(Clone)]
 pub struct Token {
     id: f32,
@@ -110,7 +109,7 @@ impl String2StructureBuilder<Vec<Token>, Vec<String>> for String2Conll {
     }
 
     ///
-    /// Get a copy of a the conll (should be called after build)
+    /// Get a copy of the conll (should be called after build)
     /// 
     fn get_structure(&self) -> Vec<Token> {
         return self.tokens.clone()
@@ -118,7 +117,7 @@ impl String2StructureBuilder<Vec<Token>, Vec<String>> for String2Conll {
 
     /// 
     /// An implementation of the build method, construction of tokens 
-    /// Receives a vector of strings that represents conll format.
+    /// Receives a vector of strings that represents a conll format.
     /// 
     /// 
     /// # Examples
@@ -140,11 +139,11 @@ impl String2StructureBuilder<Vec<Token>, Vec<String>> for String2Conll {
     ///     Err(e) => panic!("{}", e) 
     /// };
     ///
-    /// let tokens = string2conll.get_structure();
+    /// let conll = string2conll.get_structure();
     /// 
-    /// let first_token = tokens.first().unwrap();
+    /// let first_token = conll.first().unwrap();
     /// assert!(first_token.get_token_form() == "The");
-    /// let last_token = tokens.last().unwrap();
+    /// let last_token = conll.last().unwrap();
     /// assert!(last_token.get_token_id().to_string() == "4");
     /// ```
     /// 
@@ -186,10 +185,10 @@ mod tests {
             Err(e) => panic!("{}", e) 
         };
 
-        let tokens = string2conll.get_structure();
-        let first_token = tokens.first().unwrap();
+        let conll = string2conll.get_structure();
+        let first_token = conll.first().unwrap();
         assert!(first_token.get_token_form() == "The");
-        let last_token = tokens.last().unwrap();
+        let last_token = conll.last().unwrap();
         assert!(last_token.get_token_id().to_string() == "4");
     }
 }

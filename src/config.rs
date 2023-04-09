@@ -16,7 +16,7 @@ const CONSTITUENCY: &str = "c";
 #[derive(Clone)]
 struct Dependency {}
 
-/// Constituency is a vector of constituency string one-liners.
+/// Constituency is a vector of constituency string.
 #[derive(Clone)]
 struct Constituency {}
 
@@ -62,7 +62,7 @@ impl IntoIterator for Input {
 }
 
 
-/// A trait to supplies reading functionallity over input files.
+/// A trait that supplies reading functionallity over input files.
 /// The trait is used from within the config implementation.
 /// Not called directly by the user.
 trait Reader {
@@ -83,7 +83,7 @@ impl Reader for Dependency {
         let mut depencdency: Vec<String> = Vec::new();
         for (i, line) in lines.enumerate() {
             
-            // skip empty first line
+            // skip empty first line is exists
             if i == 0 && line.as_ref().unwrap().trim().is_empty() {
                 continue;
             }
@@ -134,7 +134,7 @@ pub struct Config {}
 impl Config {
 
     ///
-    /// A get method to retrive the complete output path (into png convertion)
+    /// A get method to retrive the complete output path (into image convertion)
     /// 
     pub fn get_out_file(out_dir_path: &str, file_name: &str) -> String {
         return out_dir_path.to_string() + "/" + file_name + IMG_TYPE;
@@ -159,8 +159,6 @@ impl Config {
     /// Examples are given in the lib.rs file
     /// 
     pub fn new(args: &[String]) -> Result<Input, String> {
-
-        println!("{:?}", args);
 
         // validate number of arguments supplied
         if args.len() != ARGS_LENGTH {

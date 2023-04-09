@@ -110,7 +110,7 @@ impl String2StructureBuilder<Tree<String>, String> for String2Tree {
 
         // number of closers in left determines action:
         // 0 closers means treating as node.
-        // with at least 1 closer, the tree can either be a either a constituency tree
+        // with at least 1 closer, the tree can either be a constituency tree
         // with "double leafs", or a regular tree with only one leaf.
         let mut closers = left.matches(CLOSE_BRACKETS).count() as i32;
         match closers.cmp(&0) {
@@ -209,7 +209,7 @@ impl String2StructureBuilder<Tree<String>, String> for String2Tree {
 }
 
 
-/// A trait to get an iterator over the sub-children-ids a node has
+/// A trait to get an iterator over the sub-tree-children-ids a node has
 /// using the -id-tree children impl
 pub trait SubChildren {
     fn is_leaf(&self, node_id: &NodeId) -> Result<bool, Error>;
@@ -253,10 +253,11 @@ impl SubChildren for Tree<String> {
     }
 
     ///
-    /// A method that given a tree return a mapping between node id and number of children in 
+    /// A method that given a tree returns a mapping between node id and number of children in 
     /// each node's sub tree, from node to leaves. The method receives a boolean parameter as_leaves.
     /// 
-    /// The method accounts for leaves as having 1 child (themselves).
+    /// The method treats leaves as having 1 child (themselves).
+    /// 
     /// When as_leaves is true : counts only the leaves in each node's sub tree.
     /// When as_leaves is false: counts all the nodes in some node's sub tree, from node to leaves,
     /// including the node itself.
@@ -331,8 +332,8 @@ impl SubChildren for Tree<String> {
         let post_order_iter = self.traverse_post_order_ids(root_id).unwrap();
         for node_id in post_order_iter {
 
-            // this is a post order traversal, so I add the leaves to the map (if have no children)
-            // then I add them to their parents counts in O(1).
+            // this is a post order traversal, so I add the leaves to the map first,
+            // then I add them to their parents counts in O(1) time.
 
             let node_id_copy = node_id.clone();
             if self.is_leaf(&node_id).unwrap() {

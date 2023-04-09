@@ -34,13 +34,13 @@ pub struct Conll2Plot {
 ///
 /// This is a building process of a plot.
 /// Called after using String2Structure.
-/// See lib.rs for usage examples
+/// See lib.rs for usage examples.
 /// 
 impl Structure2PlotBuilder<Vec<Token>> for Conll2Plot {
 
     fn new(structure: Vec<Token>) -> Self {
         
-        // calculate leaves only
+        // get a list of all the leaves in the input
         let seq_length = structure.len();
         let mut leaf_ids: Vec<f32> = (0..seq_length).map(|x| (x as f32)).collect();
         for i in 0..seq_length {
@@ -51,7 +51,6 @@ impl Structure2PlotBuilder<Vec<Token>> for Conll2Plot {
             let token_head = token.get_token_head();
             match leaf_ids.iter().position(|x| *x == token_head) {
                 Some(index) => {
-                    // found that the token_head is in leaf, remove it
                     leaf_ids.remove(index);
                 },
                 None => { () }
@@ -69,13 +68,12 @@ impl Structure2PlotBuilder<Vec<Token>> for Conll2Plot {
 
     fn build(&mut self, save_to: &str) {
 
-        // first run the forward part of extracting plot data
+        // first run the forward part: extraction of the plotting data through recursion
         let mut walk_args: Vec<[f32; 2]> = vec![[0.0, 0.0]; self.seq_length];
         let mut plot_data_vec: Vec<PlotData> = Vec::new();
         self.walk(None, &mut walk_args, &mut plot_data_vec);
 
-        // handle plot settings
-        // extract length of sequence
+        // determine general plot settings for the example
         let seq_length = self.seq_length as f32;
         let built_height = self.y_shift + walk_args[0..seq_length as usize].concat().iter().map(|x| *x as usize).max().unwrap() as f32;
         let total_units = 2*DIM_CONST / (seq_length + built_height) as u32;
@@ -91,7 +89,6 @@ impl Structure2PlotBuilder<Vec<Token>> for Conll2Plot {
         let root_area = BitMapBackend::new(save_to, fig_dims)
         .into_drawing_area();
         root_area.fill(&WHITE).unwrap();
-
         let x_spec = std::ops::Range{start: -0.1 as f32, end: seq_length};
         let y_spec = std::ops::Range{start: 0.0 as f32, end: 10.0 as f32};
 
@@ -120,16 +117,14 @@ impl Structure2PlotBuilder<Vec<Token>> for Conll2Plot {
 
 
 ///
-/// This is a plotting helper implementation.
-/// The methods should not be called direcly by the user.
-/// See lib.rs for usage examples
+/// This is a plotting helper implementation of the Structure2PlotPlotter trait.
+/// The methods should not be called direcly by the user, rather used by the builder.
 /// 
 impl Structure2PlotPlotter<Token, PlotData, &mut Vec<[f32; 2]>> for Conll2Plot{
 
     fn plot<'a, DB, CT>(&self, chart: &mut ChartContext<'a, DB, CT>, plot_data_vec: Vec<PlotData>, font_style: (&str, i32)) 
     where DB: DrawingBackend + 'a, CT: CoordTranslate<From = (f32, f32)> {
         
-        // TEXT STYLE
         let text_style = TextStyle::from(font_style)
         .transform(FontTransform::None)
         .font.into_font().style(FontStyle::Bold)
@@ -219,7 +214,7 @@ impl Structure2PlotPlotter<Token, PlotData, &mut Vec<[f32; 2]>> for Conll2Plot{
         // sort children by distance
         root_children_ids.sort_by(|x, y| x.1.cmp(&y.1));
 
-        // send each child to recursive before plot
+        // send each child to recursion
         for (child_id, _) in root_children_ids {
 
             let child_token = &self.tokens[child_id as usize];
@@ -252,7 +247,7 @@ impl Structure2PlotPlotter<Token, PlotData, &mut Vec<[f32; 2]>> for Conll2Plot{
                 end = (token_id - 1.0) as usize;
 
             } else {
-                return -1.0 // this is the root case, change height for computability
+                return -1.0 // this is the root case
             }
 
 
@@ -274,7 +269,6 @@ impl Structure2PlotPlotter<Token, PlotData, &mut Vec<[f32; 2]>> for Conll2Plot{
 
         let height = update();
 
-        // plot the token
         let plot_args = PlotData {
             start: token_head,
             end: token_id,

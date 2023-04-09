@@ -5,7 +5,7 @@ Plots constituency trees and dependency trees given by strings.
 
 ## Overview
 
-The code uses both the [id-tree](https://crates.io/crates/id_tree) crate and [plotters](https://crates.io/crates/plotters) crate. While primarily written with linguistic syntax in mind, it can serve other inputs, such as mathematical expressions etc. The API first transforms the input to an internal conll / tree, then plots the structure recursively. It is mostly suitable for short sentences of up to 15-20 tokens. I wrote this in order to get familiar with Rust and decided to upload it if it can help others.
+The code uses both the [id-tree](https://crates.io/crates/id_tree) crate and [plotters](https://crates.io/crates/plotters) crate. While primarily written with linguistic syntax in mind, it can serve other inputs, such as mathematical expressions etc. The API first transforms the input to an internal conll / tree, then plots the structure recursively. It is mostly suitable for short parsed sequences of up to 15-20 tokens. The program is a simple drawing program, plots strings that are already parsed. This is not a parser! I wrote this in order to get familiar with Rust and decided to upload it if it can help others.
 
 ## Input-Output
 
@@ -15,9 +15,9 @@ such that represents phrases and parts-of-speech (like the structure in [Berkele
 in python). Such strings will have "double leaves" (see an example below). Alternatively, the strings can have singular leaves,
 representing, for example, mathematical expressions.
 * For dependency trees, the programs takes a conll format, in which every token has 10 fields, separated by tab, and
-presented in a new line. Sentences are separated by an empty line. (see an example below, using the output of
+presented in a new line. Sentences are separated by an empty line. (see an example below, using an output from
 [spaCy](https://spacy.io/) in python).
-* For multiple inputs of the same type, the program will expect 3 arguments from the command line :
+* For multiple inputs of the same type, the program expects 3 arguments from the command line :
     * input type ("c" = constituency / "d" = dependency), String
     * input file path, String
     * output path, String
@@ -31,8 +31,7 @@ This example shows how to use the API in order to produce a png from a single pa
 
 ```rust
 
-// Example sentence:
-// The people watch the game
+// Example parsed sentence:
 // (S (NP (det The) (N people)) (VP (V watch) (NP (det the) (N game))))
 
 use parsed_to_plot::Config;
@@ -40,7 +39,6 @@ use parsed_to_plot::String2Tree;
 use parsed_to_plot::Tree2Plot;
 use parsed_to_plot::String2StructureBuilder;
 use parsed_to_plot::Structure2PlotBuilder;
-
 
 let mut constituency = String::from("(S (NP (det The) (N people)) (VP (V watch) (NP (det the) (N game))))");
 let mut string2tree: String2Tree = String2StructureBuilder::new();
@@ -57,11 +55,10 @@ tree2plot.build(save_to);
 
 ### Dependency
 
-This example shows how to use the API in order to produce a png from a single sentence in conll.
+This example shows how to use the API in order to produce a png from a single conll format.
 
 ```rust
 
-// The people watch the game
 //  0   The the det _   _   1   det   _   _
 //  1	people	people	NOUN	_	_	2	nsubj	_	_
 //  2	watch	watch	VERB	_	_	2	ROOT	_	_
@@ -83,14 +80,14 @@ let mut dependency = [
     "4	game	game	NOUN	_	_	2	dobj	_	_"
 ].map(|x| x.to_string()).to_vec();
 
-let mut conll2tree: String2Conll = String2StructureBuilder::new();
-conll2tree.build(&mut dependency).unwrap(); // build the conll from the vector of strings
-let tree = conll2tree.get_structure();
+let mut string2conll: String2Conll = String2StructureBuilder::new();
+string2conll.build(&mut dependency).unwrap(); // build the conll from the vector of strings
+let conll = string2conll.get_structure();
 
-// build plot from tree and save
+// build plot from conll and save
 Config::make_out_dir(&"Output".to_string());
 let save_to: &str = "Output/dependency_plot.png";
-let mut conll2plot: Conll2Plot = Structure2PlotBuilder::new(tree);
+let mut conll2plot: Conll2Plot = Structure2PlotBuilder::new(conll);
 conll2plot.build(save_to);
 
 ```
@@ -145,7 +142,7 @@ for (i, mut constituency) in sequences.into_iter().enumerate() {
     println!("working on input number {} ...", i);
     let save_to = &Config::get_out_file(&args[3], i.to_string().as_str());
 
-    // build tree from consituency, and also do a DFS to build n_sub_children from trait
+    // build tree from consituency
     let mut string2tree: String2Tree = String2StructureBuilder::new();
     string2tree.build(&mut constituency).unwrap();
     let tree = string2tree.get_structure();
