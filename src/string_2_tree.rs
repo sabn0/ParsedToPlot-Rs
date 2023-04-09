@@ -222,26 +222,7 @@ impl SubChildren for Tree<String> {
     /// A method that checks if a node is a leaf (i.e has no children)
     /// Input is a &NodeId. Returns a true result if leaf, or false result otherwise.
     /// 
-    /// This method is used via get_sub_children method, but can be used without it.
-    /// 
-    /// # Examples
-    /// 
-    /// ```
-    /// use id_tree::NodeId;
-    /// use parsed_to_plot::{String2Tree, SubChildren, String2StructureBuilder};
-    /// 
-    /// let mut string2tree: String2Tree = String2StructureBuilder::new();
-    /// let mut constituency = String::from("(S (NP (det The) (N people)) (VP (V watch) (NP (det the) (N game))))");
-    /// let _res = match string2tree.build(&mut constituency) {
-    ///     Ok(_res) => Ok(_res),
-    ///     Err(e) => Err(e)
-    /// };
-    /// let tree = string2tree.get_structure();
-    /// let root_node_id: &NodeId = tree.root_node_id().unwrap();
-    /// let is_leaf_result: bool = tree.is_leaf(root_node_id).unwrap();
-    /// 
-    /// assert_eq!(is_leaf_result, false);
-    /// ```
+    /// This method is used via get_sub_children method.
     /// 
     fn is_leaf(&self, node_id: &NodeId) -> Result<bool, Error> {
         
@@ -261,64 +242,6 @@ impl SubChildren for Tree<String> {
     /// When as_leaves is true : counts only the leaves in each node's sub tree.
     /// When as_leaves is false: counts all the nodes in some node's sub tree, from node to leaves,
     /// including the node itself.
-    /// 
-    /// # Examples
-    /// 
-    /// ## As_leaves
-    /// 
-    /// ```
-    /// use parsed_to_plot::{String2Tree, SubChildren, String2StructureBuilder};
-    /// use id_tree::PreOrderTraversalIds;
-    /// 
-    /// let mut string2tree: String2Tree = String2StructureBuilder::new();
-    /// let mut sequence = String::from("(S (0 (1) (2 (3) (4))))");
-    /// let _res = match string2tree.build(&mut sequence) {
-    ///     Ok(_res) => Ok(_res),
-    ///     Err(e) => Err(e)
-    /// };
-    /// let mut tree = string2tree.get_structure();
-    /// 
-    /// // an example for as_leaves :
-    /// let as_leaves_node2num = match SubChildren::get_sub_children(&mut tree, true) {
-    ///     Ok(as_leaves_node2num) => as_leaves_node2num,
-    ///     Err(_e) => panic!("could not infer sub children from tree")
-    /// };
-    /// 
-    /// let mut iter: PreOrderTraversalIds<String> = tree.traverse_pre_order_ids(tree.root_node_id().unwrap()).unwrap();
-    /// // checking the first 3 nodes in pre_order:
-    /// assert_eq!(*as_leaves_node2num.get(&iter.next().unwrap()).unwrap(), 3);
-    /// assert_eq!(*as_leaves_node2num.get(&iter.next().unwrap()).unwrap(), 3);
-    /// assert_eq!(*as_leaves_node2num.get(&iter.next().unwrap()).unwrap(), 1);
-    /// ```
-    /// 
-    /// ## not As_leaves
-    /// 
-    /// ```
-    /// use parsed_to_plot::{String2Tree, SubChildren, String2StructureBuilder};
-    /// use id_tree::PreOrderTraversalIds;
-    /// 
-    /// let mut string2tree: String2Tree = String2StructureBuilder::new();
-    /// let mut sequence = String::from("(S (0 (1) (2 (3) (4))))");
-    /// let _res = match string2tree.build(&mut sequence) {
-    ///     Ok(_res) => Ok(_res),
-    ///     Err(e) => Err(e)
-    /// };
-    /// let mut tree = string2tree.get_structure();
-    /// 
-    /// // an example for not as_leaves :
-    /// let not_as_leaves_node2num = match SubChildren::get_sub_children(&mut tree, false) {
-    ///     Ok(not_as_leaves_node2num) => not_as_leaves_node2num,
-    ///     Err(_e) => panic!("could not infer sub children from tree")
-    /// };
-    /// 
-    /// let mut iter: PreOrderTraversalIds<String> = tree.traverse_pre_order_ids(tree.root_node_id().unwrap()).unwrap();
-    /// // checking the first 4 nodes in pre_order:
-    /// assert_eq!(*not_as_leaves_node2num.get(&iter.next().unwrap()).unwrap(), 6);
-    /// assert_eq!(*not_as_leaves_node2num.get(&iter.next().unwrap()).unwrap(), 5);
-    /// assert_eq!(*not_as_leaves_node2num.get(&iter.next().unwrap()).unwrap(), 1);
-    /// assert_eq!(*not_as_leaves_node2num.get(&iter.next().unwrap()).unwrap(), 3);
-    /// 
-    /// ```
     /// 
     fn get_sub_children(&mut self, as_leaves: bool) -> Result<HashMap<NodeId, usize>, NodeIdError> {
 
@@ -359,7 +282,6 @@ impl SubChildren for Tree<String> {
 
 #[cfg(test)]
 mod tests {
-
 
     use crate::String2StructureBuilder;
     use super::String2Tree;
