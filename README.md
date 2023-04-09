@@ -31,7 +31,7 @@ See an example below.
 
 The following example shows how to use the API in order to produce a png from a single parsed constituency string.
 
-```
+```rust
 // Example parsed sentence:
 // (S (NP (det The) (N people)) (VP (V watch) (NP (det the) (N game))))
 
@@ -57,7 +57,7 @@ tree2plot.build(save_to);
 
 The following example shows how to use the API in order to produce a png from a single conll format.
 
-```
+```rust
 //  0   The the det _   _   1   det   _   _
 //  1	people	people	NOUN	_	_	2	nsubj	_	_
 //  2	watch	watch	VERB	_	_	2	ROOT	_	_
@@ -114,7 +114,7 @@ Will save png images of constituency trees drawn for the inputs in constituencie
 
 #### Constituency
 
-```
+```rust
 use parsed_to_plot::Config;
 use parsed_to_plot::String2Tree;
 use parsed_to_plot::Tree2Plot;
@@ -153,7 +153,7 @@ for (i, mut constituency) in sequences.into_iter().enumerate() {
 
 #### Dependency
 
-```
+```rust
 use parsed_to_plot::Config;
 use parsed_to_plot::String2Conll;
 use parsed_to_plot::Conll2Plot;
