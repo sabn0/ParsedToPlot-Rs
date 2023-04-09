@@ -1,5 +1,4 @@
 //!
-//! ![AppVeyor](https://img.shields.io/appveyor/build/Sabn0/ParsedToPlot-Rs)
 //! 
 //! Plots constituency trees and dependency trees given by strings.
 //! 
@@ -33,7 +32,7 @@
 //! // Example parsed sentence: 
 //! // (S (NP (det The) (N people)) (VP (V watch) (NP (det the) (N game))))
 //! 
-//! use parsed_to_plot::Configs;
+//! use parsed_to_plot::Config;
 //! use parsed_to_plot::String2Tree;
 //! use parsed_to_plot::Tree2Plot;
 //! use parsed_to_plot::String2StructureBuilder;
