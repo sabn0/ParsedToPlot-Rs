@@ -17,7 +17,7 @@ const EMPTY_TREE: &str = "(S)";
 const NULL_TREE: &str = "()";
 const CLOSE_BRACKETS: char = ')';
 
-/// A String2Tree object, wrap the Tree<String> id_tree object
+/// A String2Tree object, wrap the Tree-String id_tree object
 pub struct String2Tree {
     tree: Tree<String>,
     parent_node_id: Option<NodeId>,
@@ -52,7 +52,7 @@ impl String2StructureBuilder<Tree<String>, String> for String2Tree {
     }
 
     /// 
-    /// A recursive method that builds a Tree<String> object from a constituency string
+    /// A recursive method that builds a Tree-String object from a constituency string
     /// Returns Ok if the process was succesful (error otherwise)
     ///
     /// # Examples
