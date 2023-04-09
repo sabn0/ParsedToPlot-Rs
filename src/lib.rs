@@ -211,7 +211,6 @@ mod string_2_tree;
 mod tree_2_plot;
 mod generic_traits;
 
-
 pub use config::Config;
 pub use config::Input;
 pub use string_2_tree::String2Tree;

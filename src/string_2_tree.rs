@@ -210,7 +210,7 @@ impl String2StructureBuilder<Tree<String>, String> for String2Tree {
 
 
 /// A trait to get an iterator over the sub-tree-children-ids a node has
-/// using the -id-tree children impl
+/// using the -id-tree children impl.
 pub trait SubChildren {
     fn is_leaf(&self, node_id: &NodeId) -> Result<bool, Error>;
     fn get_sub_children(&mut self, as_leaves: bool) -> Result<HashMap<NodeId, usize>, NodeIdError>;
@@ -574,7 +574,5 @@ mod tests {
         assert_eq!(is_leaf_result, false);
 
     }
-
-
 
 }

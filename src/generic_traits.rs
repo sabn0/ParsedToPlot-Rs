@@ -21,10 +21,11 @@ pub trait Structure2PlotBuilder<V> {
 }
 
 /// A trait that contains the needed functionallity to plot a structure-to-plot that is built.
-/// Not called directly by the user.
+/// Not called by the user.
 pub trait Structure2PlotPlotter<W, X, Y> {
     fn plot<'a, DB, CT>(&self, chart: &mut ChartContext<'a, DB, CT>, plot_data_vec: Vec<X>, font_style: (&str, i32)) 
     where DB: DrawingBackend + 'a, CT: CoordTranslate<From = (f32, f32)>;
     fn walk(&self, item: Option<&W>, walk_args: Y, plot_data_vec: &mut Vec<X>);
     fn extract(&self, _item: &W, _walk_args: Y) -> X { todo!() } // optional
 }
+

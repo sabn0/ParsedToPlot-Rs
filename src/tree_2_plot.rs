@@ -111,8 +111,7 @@ impl Structure2PlotBuilder<Tree<String>> for Tree2Plot {
 /// 
 impl Structure2PlotPlotter<NodeId, PlotData, Option<PlotData>> for Tree2Plot {
 
-    fn plot<'a, DB, CT>(&self, chart: &mut ChartContext<'a, DB, CT>, plot_data_vec: Vec<PlotData>, font_style: (&str, i32)) 
-    where DB: DrawingBackend + 'a, CT: CoordTranslate<From = (f32, f32)> {
+    fn plot<'a, DB, CT>(&self, chart: &mut ChartContext<'a, DB, CT>, plot_data_vec: Vec<PlotData>, font_style: (&str, i32)) where DB: DrawingBackend + 'a, CT: CoordTranslate<From = (f32, f32)> {
         
         let text_style = TextStyle::from(font_style)
         .transform(FontTransform::None)

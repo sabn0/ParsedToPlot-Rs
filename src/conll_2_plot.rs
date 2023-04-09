@@ -120,10 +120,9 @@ impl Structure2PlotBuilder<Vec<Token>> for Conll2Plot {
 /// This is a plotting helper implementation of the Structure2PlotPlotter trait.
 /// The methods should not be called direcly by the user, rather used by the builder.
 /// 
-impl Structure2PlotPlotter<Token, PlotData, &mut Vec<[f32; 2]>> for Conll2Plot{
+impl Structure2PlotPlotter<Token, PlotData, &mut Vec<[f32; 2]>> for Conll2Plot {
 
-    fn plot<'a, DB, CT>(&self, chart: &mut ChartContext<'a, DB, CT>, plot_data_vec: Vec<PlotData>, font_style: (&str, i32)) 
-    where DB: DrawingBackend + 'a, CT: CoordTranslate<From = (f32, f32)> {
+    fn plot<'a, DB, CT>(&self, chart: &mut ChartContext<'a, DB, CT>, plot_data_vec: Vec<PlotData>, font_style: (&str, i32)) where DB: DrawingBackend + 'a, CT: CoordTranslate<From = (f32, f32)> {
         
         let text_style = TextStyle::from(font_style)
         .transform(FontTransform::None)
@@ -281,4 +280,5 @@ impl Structure2PlotPlotter<Token, PlotData, &mut Vec<[f32; 2]>> for Conll2Plot{
         return plot_args;
 
     }
+
 }
