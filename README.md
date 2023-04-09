@@ -192,7 +192,7 @@ for (i, mut dependency) in sequences.into_iter().enumerate() {
 
 ## References
 * I used the crates: [id-tree](https://crates.io/crates/id_tree), [plotters](https://crates.io/crates/plotters).
-* I used [spaCy](https://spacy.io/) to create a couple of examples for demonstartion.
+* I used [spaCy](https://spacy.io/) to create a couple of examples for illustration and validation.
 
 ## License
 Under MIT license.
