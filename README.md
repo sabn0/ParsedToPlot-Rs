@@ -1,6 +1,8 @@
 # parsed_to_plot
 
 
+![AppVeyor](https://img.shields.io/appveyor/build/Sabn0/ParsedToPlot-Rs)
+
 Plots constituency trees and dependency trees given by strings.
 
 ## Overview
@@ -201,3 +203,7 @@ I made two demo examples with [spaCy](https://spacy.io/) and [Berkeley Neural Pa
 
 ## License
 Under MIT license.
+
+
+
+License: MIT
