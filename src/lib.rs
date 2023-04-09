@@ -30,7 +30,6 @@
 //! This example shows how to use the API in order to produce a png from a single parsed constituency string.
 //! 
 //! ```
-//! 
 //! // Example parsed sentence: 
 //! // (S (NP (det The) (N people)) (VP (V watch) (NP (det the) (N game))))
 //! 
@@ -50,7 +49,6 @@
 //! let save_to: &str = "Output/constituency_plot.png";
 //! let mut tree2plot: Tree2Plot = Structure2PlotBuilder::new(tree);
 //! tree2plot.build(save_to);
-//! 
 //! ```
 //! 
 //! ## Dependency  
@@ -64,7 +62,6 @@
 //! //  2	watch	watch	VERB	_	_	2	ROOT	_	_
 //! //  3	the	the	DET	_	_	4	det	_	_
 //! //  4	game	game	NOUN	_	_	2	dobj	_	_
-//! 
 //! 
 //! use parsed_to_plot::Config;
 //! use parsed_to_plot::String2Conll;
@@ -89,7 +86,6 @@
 //! let save_to: &str = "Output/dependency_plot.png";
 //! let mut conll2plot: Conll2Plot = Structure2PlotBuilder::new(conll);
 //! conll2plot.build(save_to);
-//! 
 //! ```
 //! 
 //! ## Multiple inputs via file 
@@ -118,7 +114,6 @@
 //! ### Constituency
 //! 
 //! ```ignore
-//! 
 //! use parsed_to_plot::Config;
 //! use parsed_to_plot::String2Tree;
 //! use parsed_to_plot::Tree2Plot;
@@ -150,15 +145,12 @@
 //!     // build plot from tree
 //!     let mut tree2plot: Tree2Plot = Structure2PlotBuilder::new(tree);
 //!     tree2plot.build(save_to);
-//!
 //! }
-//! 
 //! ```
 //! 
 //! ### Dependency
 //! 
 //! ```ignore
-//! 
 //! use parsed_to_plot::Config;
 //! use parsed_to_plot::String2Conll;
 //! use parsed_to_plot::Conll2Plot;
@@ -190,9 +182,7 @@
 //!     // build plot from conll
 //!     let mut conll2plot: Conll2Plot = Structure2PlotBuilder::new(conll);
 //!     conll2plot.build(save_to);
-//!
 //! }
-//! 
 //! ```
 //! 
 //! # References
