@@ -1,4 +1,8 @@
 
+//
+// Under MIT license
+//
+
 use id_tree::NodeId;
 use plotters::prelude::{DrawingBackend, CoordTranslate, ChartContext};
 

@@ -1,4 +1,8 @@
 
+//
+// Under MIT license
+//
+
 use super::string_2_conll::*;
 use plotters::{prelude::*, style::text_anchor::{Pos, HPos, VPos}};
 use crate::{Structure2PlotBuilder, Structure2PlotPlotter};

@@ -1,8 +1,7 @@
-![AppVeyor](https://img.shields.io/appveyor/build/Sabn0/ParsedToPlot-Rs)
-
 # parsed_to_plot
 
-'parsed_to_plot' plots constituency trees and dependency trees given by strings.
+
+Plots constituency trees and dependency trees given by strings.
 
 ## Overview
 
@@ -36,6 +35,7 @@ This example shows how to use the API in order to produce a png from a single pa
 // The people watch the game
 // (S (NP (det The) (N people)) (VP (V watch) (NP (det the) (N game))))
 
+use parsed_to_plot::Config;
 use parsed_to_plot::String2Tree;
 use parsed_to_plot::Tree2Plot;
 use parsed_to_plot::String2StructureBuilder;
@@ -48,6 +48,7 @@ string2tree.build(&mut constituency).unwrap(); // build the tree from the string
 let tree = string2tree.get_structure();
 
 // build plot from tree and save
+Config::make_out_dir(&"Output".to_string());
 let save_to: &str = "Output/constituency_plot.png";
 let mut tree2plot: Tree2Plot = Structure2PlotBuilder::new(tree);
 tree2plot.build(save_to);
@@ -68,6 +69,7 @@ This example shows how to use the API in order to produce a png from a single se
 //  4	game	game	NOUN	_	_	2	dobj	_	_
 
 
+use parsed_to_plot::Config;
 use parsed_to_plot::String2Conll;
 use parsed_to_plot::Conll2Plot;
 use parsed_to_plot::String2StructureBuilder;
@@ -86,6 +88,7 @@ conll2tree.build(&mut dependency).unwrap(); // build the conll from the vector o
 let tree = conll2tree.get_structure();
 
 // build plot from tree and save
+Config::make_out_dir(&"Output".to_string());
 let save_to: &str = "Output/dependency_plot.png";
 let mut conll2plot: Conll2Plot = Structure2PlotBuilder::new(tree);
 conll2plot.build(save_to);
@@ -96,7 +99,9 @@ conll2plot.build(save_to);
 
 You can use multiple inputs of the same type in a file, through the command line, as follows:
 
-/* ``` cargo run INPUT_TYPE INPUT_FILE OUTPUT_PATH``` */
+```
+cargo run INPUT_TYPE INPUT_FILE OUTPUT_PATH
+```
 
 when:
 * INPUT_TYPE should be replaced with "c" for constituency or "d" for dependency.
@@ -105,7 +110,9 @@ when:
 
 For example:
 
-/* ```cargo run c constituencies.txt Output```*/
+```
+cargo run c constituencies.txt Output
+```
 
 
 Will save png images of constituency trees drawn for the inputs in constituencies.txt, in an Output dir.
@@ -198,3 +205,6 @@ I made two demo examples with [spaCy](https://spacy.io/) and [Berkeley Neural Pa
 ## License
 Under MIT license.
 
+
+
+License: MIT

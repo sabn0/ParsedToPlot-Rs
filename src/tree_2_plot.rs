@@ -1,4 +1,7 @@
 
+//
+// Under MIT license
+//
 
 use id_tree::*;
 use plotters::{prelude::*, style::text_anchor::*};

@@ -1,4 +1,7 @@
 
+//
+// Under MIT license
+//
 
 use id_tree::*;
 use id_tree::InsertBehavior::*;

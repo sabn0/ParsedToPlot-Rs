@@ -1,4 +1,9 @@
 
+//
+// Under MIT license
+//
+
+
 use crate::String2StructureBuilder;
 
 const CONLL_SIZE: usize = 10;

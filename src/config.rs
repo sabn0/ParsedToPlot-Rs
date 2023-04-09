@@ -1,4 +1,7 @@
 
+//
+// Under MIT license
+//
 
 use std::fs::{self, File};
 use std::io::{self, BufRead};
