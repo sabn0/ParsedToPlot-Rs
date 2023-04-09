@@ -1,7 +1,6 @@
 # parsed_to_plot
 
-
-![AppVeyor](https://img.shields.io/appveyor/build/Sabn0/ParsedToPlot-Rs)
+![example workflow](https://github.com/Sabn0/ParsedToPlot-Rs/actions/workflows/rust.yml/badge.svg)
 
 Plots constituency trees and dependency trees given by strings.
 
