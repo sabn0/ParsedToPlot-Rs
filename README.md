@@ -32,7 +32,6 @@ See an example below.
 The following example shows how to use the API in order to produce a png from a single parsed constituency string.
 
 ```
-
 // Example parsed sentence:
 // (S (NP (det The) (N people)) (VP (V watch) (NP (det the) (N game))))
 
@@ -52,7 +51,6 @@ Config::make_out_dir(&"Output".to_string());
 let save_to: &str = "Output/constituency_plot.png";
 let mut tree2plot: Tree2Plot = Structure2PlotBuilder::new(tree);
 tree2plot.build(save_to);
-
 ```
 
 ### Dependency
@@ -60,7 +58,6 @@ tree2plot.build(save_to);
 The following example shows how to use the API in order to produce a png from a single conll format.
 
 ```
-
 //  0   The the det _   _   1   det   _   _
 //  1	people	people	NOUN	_	_	2	nsubj	_	_
 //  2	watch	watch	VERB	_	_	2	ROOT	_	_
@@ -91,7 +88,6 @@ Config::make_out_dir(&"Output".to_string());
 let save_to: &str = "Output/dependency_plot.png";
 let mut conll2plot: Conll2Plot = Structure2PlotBuilder::new(conll);
 conll2plot.build(save_to);
-
 ```
 
 ### Multiple inputs via file
