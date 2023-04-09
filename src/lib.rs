@@ -1,6 +1,6 @@
 //!
 //! ![AppVeyor](https://img.shields.io/appveyor/build/Sabn0/ParsedToPlot-Rs)
-//!  
+//! 
 //! Plots constituency trees and dependency trees given by strings.
 //! 
 //! # Overview
