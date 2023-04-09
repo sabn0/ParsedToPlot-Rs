@@ -3,7 +3,7 @@
 // Under MIT license
 //
 
-use crate::String2StructureBuilder;
+use crate::generic_traits::generic_traits::String2StructureBuilder;
 
 const CONLL_SIZE: usize = 10;
 
@@ -165,7 +165,7 @@ impl String2StructureBuilder<Vec<Token>, Vec<String>> for String2Conll {
 #[cfg(test)]
 mod tests {
 
-    use crate::String2StructureBuilder;
+    use crate::generic_traits::generic_traits::String2StructureBuilder;
     use super::String2Conll;
 
     #[test]

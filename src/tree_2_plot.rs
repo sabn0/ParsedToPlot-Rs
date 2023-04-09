@@ -5,9 +5,9 @@
 
 use id_tree::*;
 use plotters::{prelude::*, style::text_anchor::*};
-use std::{collections::HashMap};
-use crate::string_2_tree::SubChildren;
-use crate::{Structure2PlotBuilder, Structure2PlotPlotter};
+use std::collections::HashMap;
+use crate::generic_traits::generic_traits::{Structure2PlotBuilder, Structure2PlotPlotter};
+use crate::sub_tree_children::sub_tree_children::SubChildren;
 
 const DIM_CONST: usize = 640;
 const FONT_CONST: f32 = 0.0267;

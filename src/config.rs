@@ -3,133 +3,139 @@
 // Under MIT license
 //
 
-use std::fs::{self, File};
-use std::io::{self, BufRead};
-use std::vec;
+use std::fs::{self};
 
 const ARGS_LENGTH: usize = 4;
 const IMG_TYPE: &str = ".png";
 const DEPENDENCY: &str = "d";
 const CONSTITUENCY: &str = "c";
 
-/// Dependency is a vector of dependency string vectors.
-#[derive(Clone)]
-struct Dependency {}
+pub mod configure_structures {
 
-/// Constituency is a vector of constituency string.
-#[derive(Clone)]
-struct Constituency {}
+    use std::fs::File;
+    use std::io::{self, BufRead};
+    use std::vec;
 
-/// An enum that wraps the data types supported.
-#[derive(Clone)]
-pub enum Input {
-    Dependency(Vec<Vec<String>>),
-    Constituency(Vec<String>)
-}
+    /// Dependency is a vector of dependency string vectors.
+    #[derive(Clone)]
+    pub(in crate::config) struct Dependency {}
 
-impl TryFrom<Input> for Vec<String> {
-    type Error = ();
+    /// Constituency is a vector of constituency string.
+    #[derive(Clone)]
+    pub(in crate::config) struct Constituency {}
 
-    fn try_from(value: Input) -> Result<Self, Self::Error> {
-        match value {
-            Input::Constituency(x) => Ok(x),
-            _ => Err(())
+    /// An enum that wraps the data types supported.
+    #[derive(Clone)]
+    pub enum Input {
+        Dependency(Vec<Vec<String>>),
+        Constituency(Vec<String>)
+    }
+
+    impl TryFrom<Input> for Vec<String> {
+        type Error = ();
+
+        fn try_from(value: Input) -> Result<Self, Self::Error> {
+            match value {
+                Input::Constituency(x) => Ok(x),
+                _ => Err(())
+            }
         }
     }
-}
 
-impl TryFrom<Input> for Vec<Vec<String>> {
-    type Error = ();
+    impl TryFrom<Input> for Vec<Vec<String>> {
+        type Error = ();
 
-    fn try_from(value: Input) -> Result<Self, Self::Error> {
-        match value {
-            Input::Dependency(x) => Ok(x),
-            _ => Err(())
+        fn try_from(value: Input) -> Result<Self, Self::Error> {
+            match value {
+                Input::Dependency(x) => Ok(x),
+                _ => Err(())
+            }
         }
     }
-}
 
-impl IntoIterator for Input {
-    type Item = Vec<String>;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
+    impl IntoIterator for Input {
+        type Item = Vec<String>;
+        type IntoIter = std::vec::IntoIter<Self::Item>;
 
-    fn into_iter(self) -> Self::IntoIter {
-        match self {
-            Input::Constituency(x) => vec![x].into_iter(),
-            Input::Dependency(x) => x.into_iter()
+        fn into_iter(self) -> Self::IntoIter {
+            match self {
+                Input::Constituency(x) => vec![x].into_iter(),
+                Input::Dependency(x) => x.into_iter()
+            }
         }
     }
-}
 
 
-/// A trait that supplies reading functionallity over input files.
-/// The trait is used from within the config implementation.
-/// Not called directly by the user.
-trait Reader {
-    fn read_input(&self, file_path: &str) -> Result<Input, String>;
-}
+    /// A trait that supplies reading functionallity over input files.
+    /// The trait is used from within the config implementation.
+    /// Not called directly by the user.
+    pub (in crate::config) trait Reader {
+        fn read_input(&self, file_path: &str) -> Result<Input, String>;
+    }
 
-impl Reader for Dependency {
-    
-    fn read_input(&self, file_path: &str) -> Result<Input, String> {
+    impl Reader for Dependency {
+        
+        fn read_input(&self, file_path: &str) -> Result<Input, String> {
 
-        // load dependencies
-        let lines = match File::open(file_path) {
-            Ok(f) => io::BufReader::new(f).lines(),
-            Err(e) => return Err(e.to_string())
-        };
+            // load dependencies
+            let lines = match File::open(file_path) {
+                Ok(f) => io::BufReader::new(f).lines(),
+                Err(e) => return Err(e.to_string())
+            };
 
-        let mut sequences = Vec::new();
-        let mut depencdency: Vec<String> = Vec::new();
-        for (i, line) in lines.enumerate() {
-            
-            // skip empty first line is exists
-            if i == 0 && line.as_ref().unwrap().trim().is_empty() {
-                continue;
+            let mut sequences = Vec::new();
+            let mut depencdency: Vec<String> = Vec::new();
+            for (i, line) in lines.enumerate() {
+                
+                // skip empty first line is exists
+                if i == 0 && line.as_ref().unwrap().trim().is_empty() {
+                    continue;
+                }
+
+                if line.as_ref().unwrap().trim().is_empty() {
+                    sequences.push(depencdency);
+                    depencdency = Vec::new();
+                } else {
+                    depencdency.push(line.unwrap());
+                }
             }
 
-            if line.as_ref().unwrap().trim().is_empty() {
+            if depencdency.len() > 0 {
                 sequences.push(depencdency);
-                depencdency = Vec::new();
-            } else {
-                depencdency.push(line.unwrap());
             }
+
+            return Ok(Input::Dependency(sequences))
+
         }
+    }
 
-        if depencdency.len() > 0 {
-            sequences.push(depencdency);
+
+    impl Reader for Constituency {
+
+        fn read_input(&self, file_path: &str) -> Result<Input, String> {
+
+            // load constituencies
+            let mut sequences = Vec::new();
+            let lines = match File::open(file_path) {
+                Ok(f) => io::BufReader::new(f).lines(),
+                Err(e) => return Err(e.to_string())
+            };
+
+            for line in lines {
+                sequences.push(line.unwrap());
+            }
+
+            return Ok(Input::Constituency(sequences))
         }
-
-        return Ok(Input::Dependency(sequences))
-
     }
 }
-
-
-impl Reader for Constituency {
-
-    fn read_input(&self, file_path: &str) -> Result<Input, String> {
-
-        // load constituencies
-        let mut sequences = Vec::new();
-        let lines = match File::open(file_path) {
-            Ok(f) => io::BufReader::new(f).lines(),
-            Err(e) => return Err(e.to_string())
-        };
-
-        for line in lines {
-            sequences.push(line.unwrap());
-        }
- 
-        return Ok(Input::Constituency(sequences))
-    }
-}
-
 
 /// An empty struct of configuration process 
 #[derive(PartialEq)]
 #[derive(Debug)]
 pub struct Config {}
+
+use self::configure_structures::{Dependency, Constituency, Input, Reader};
 
 impl Config {
 
@@ -187,7 +193,7 @@ impl Config {
 #[cfg(test)]
 mod tests {
 
-    use super::Input;
+    use super::configure_structures::Input;
     use super::Config;
 
     fn config_test_template(selector: &str, input_path: &str, output_path: &str, additional: Option<&str>) -> Result<Input, String> {

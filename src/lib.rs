@@ -58,7 +58,7 @@
 //! This example shows how to use the API in order to produce a png from a single conll format.
 //! 
 //! ```
-//! 
+//! // Example conll:
 //! //  0   The the det _   _   1   det   _   _
 //! //  1	people	people	NOUN	_	_	2	nsubj	_	_
 //! //  2	watch	watch	VERB	_	_	2	ROOT	_	_
@@ -210,14 +210,12 @@ mod conll_2_plot;
 mod string_2_tree;
 mod tree_2_plot;
 mod generic_traits;
+mod sub_tree_children;
 
 pub use config::Config;
-pub use config::Input;
 pub use string_2_tree::String2Tree;
-pub use string_2_tree::SubChildren;
 pub use string_2_conll::String2Conll;
 pub use tree_2_plot::Tree2Plot;
 pub use conll_2_plot::Conll2Plot;
-pub use generic_traits::String2StructureBuilder;
-pub use generic_traits::Structure2PlotBuilder;
-pub use generic_traits::Structure2PlotPlotter;
+pub use generic_traits::generic_traits::String2StructureBuilder;
+pub use generic_traits::generic_traits::Structure2PlotBuilder;

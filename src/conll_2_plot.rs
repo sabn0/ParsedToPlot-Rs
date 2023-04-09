@@ -5,7 +5,7 @@
 
 use super::string_2_conll::*;
 use plotters::{prelude::*, style::text_anchor::{Pos, HPos, VPos}};
-use crate::{Structure2PlotBuilder, Structure2PlotPlotter};
+use crate::generic_traits::generic_traits::{Structure2PlotBuilder, Structure2PlotPlotter};
 
 const DIM_CONST: u32 = 640;
 const MARGIN: u32 = 15;
