@@ -1,2 +1,0 @@
-(S (NP (det The) (N people)) (VP (V watch) (NP (det the) (N game))))
-(S (36 (9 (3) (3)) (4 (2) (2))))
