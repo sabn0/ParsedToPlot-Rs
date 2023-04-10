@@ -41,7 +41,7 @@
 //! let tree = string2tree.get_structure();
 //! 
 //! // build plot from tree and save
-//! Config::make_out_dir(&"Output".to_string());
+//! let _ = Config::make_out_dir(&"Output".to_string());
 //! let save_to: &str = "Output/constituency_plot.png";
 //! let mut tree2plot: Tree2Plot = Structure2PlotBuilder::new(tree);
 //! tree2plot.build(save_to);
@@ -78,7 +78,7 @@
 //! let conll = string2conll.get_structure();
 //! 
 //! // build plot from conll and save
-//! Config::make_out_dir(&"Output".to_string());
+//! let _ = Config::make_out_dir(&"Output".to_string());
 //! let save_to: &str = "Output/dependency_plot.png";
 //! let mut conll2plot: Conll2Plot = Structure2PlotBuilder::new(conll);
 //! conll2plot.build(save_to);
