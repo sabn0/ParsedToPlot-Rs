@@ -144,9 +144,7 @@ for (i, mut constituency) in sequences.into_iter().enumerate() {
     // build plot from tree
     let mut tree2plot: Tree2Plot = Structure2PlotBuilder::new(tree);
     tree2plot.build(save_to);
-
 }
-
 ```
 
 #### Dependency
@@ -183,9 +181,7 @@ for (i, mut dependency) in sequences.into_iter().enumerate() {
     // build plot from conll
     let mut conll2plot: Conll2Plot = Structure2PlotBuilder::new(conll);
     conll2plot.build(save_to);
-
 }
-
 ```
 
 ## References
