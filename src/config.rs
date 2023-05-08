@@ -27,41 +27,41 @@ pub mod configure_structures {
 
     /// An enum that wraps the data types supported.
     #[derive(Clone, Debug)]
-    pub enum Input {
+    pub enum DataType {
         Dependency(Vec<Vec<String>>),
         Constituency(Vec<String>)
     }
 
-    impl TryFrom<Input> for Vec<String> {
+    impl TryFrom<DataType> for Vec<String> {
         type Error = Box<dyn Error>;
 
-        fn try_from(value: Input) -> Result<Self, Self::Error> {
+        fn try_from(value: DataType) -> Result<Self, Self::Error> {
             match value {
-                Input::Constituency(x) => Ok(x),
+                DataType::Constituency(x) => Ok(x),
                 _ => Err(format!("could not convert value {:?} to {}", value, std::any::type_name::<Self>()).into())
             }
         }
     }
 
-    impl TryFrom<Input> for Vec<Vec<String>> {
+    impl TryFrom<DataType> for Vec<Vec<String>> {
         type Error = Box<dyn Error>;
         
-        fn try_from(value: Input) -> Result<Self, Self::Error> {
+        fn try_from(value: DataType) -> Result<Self, Self::Error> {
             match value {
-                Input::Dependency(x) => Ok(x),
+                DataType::Dependency(x) => Ok(x),
                 _ => Err(format!("could not convert value {:?} to {}", value, std::any::type_name::<Self>()).into())
             }
         }
     }
 
-    impl IntoIterator for Input {
+    impl IntoIterator for DataType {
         type Item = Vec<String>;
         type IntoIter = std::vec::IntoIter<Self::Item>;
 
         fn into_iter(self) -> Self::IntoIter {
             match self {
-                Input::Constituency(x) => vec![x].into_iter(),
-                Input::Dependency(x) => x.into_iter()
+                DataType::Constituency(x) => vec![x].into_iter(),
+                DataType::Dependency(x) => x.into_iter()
             }
         }
     }
@@ -71,12 +71,13 @@ pub mod configure_structures {
     /// The trait is used from within the config implementation.
     /// Not called directly by the user.
     pub (in crate::config) trait Reader {
-        fn read_input(&self, file_path: &str) -> Result<Input, Box<dyn Error>>;
+        type Out;
+        fn read_input(&self, file_path: &str) -> Result<Self::Out, Box<dyn Error>>;
     }
 
     impl Reader for Dependency {
-        
-        fn read_input(&self, file_path: &str) -> Result<Input, Box<dyn Error>> {
+        type Out = DataType;
+        fn read_input(&self, file_path: &str) -> Result<Self::Out, Box<dyn Error>> {
 
             // load dependencies
             let in_file = File::open(file_path)?; 
@@ -103,15 +104,15 @@ pub mod configure_structures {
                 sequences.push(depencdency);
             }
 
-            return Ok(Input::Dependency(sequences))
+            return Ok(DataType::Dependency(sequences))
 
         }
     }
 
 
     impl Reader for Constituency {
-
-        fn read_input(&self, file_path: &str) -> Result<Input, Box<dyn Error>> {
+        type Out = DataType;
+        fn read_input(&self, file_path: &str) -> Result<Self::Out, Box<dyn Error>> {
 
             let in_file = File::open(file_path)?; 
             let lines = io::BufReader::new(in_file).lines();
@@ -119,7 +120,7 @@ pub mod configure_structures {
                 .expect("un string-like line"))
                 .collect::<Vec<String>>();
             
-            return Ok(Input::Constituency(sequences))
+            return Ok(DataType::Constituency(sequences))
         }
     }
 }
@@ -129,7 +130,7 @@ pub mod configure_structures {
 #[derive(Debug)]
 pub struct Config {}
 
-use self::configure_structures::{Dependency, Constituency, Input, Reader};
+use self::configure_structures::{Dependency, Constituency, DataType, Reader};
 
 impl Config {
 
@@ -153,12 +154,12 @@ impl Config {
 
     ///
     /// The Config trait receives the command line array of inputs and parses it.
-    /// Expects 3 arguments : Letter selector, Input text file, Requested output path to save png images.
-    /// Returns a Result over Input type.
+    /// Expects 3 arguments : Letter selector, input text file, Requested output path to save png images.
+    /// Returns a Result over DataType.
     /// 
     /// Examples are given in the lib.rs file
     /// 
-    pub fn new(args: &[String]) -> Result<Input, Box<dyn Error>> {
+    pub fn new(args: &[String]) -> Result<DataType, Box<dyn Error>> {
 
         // validate number of arguments supplied
         if args.len() != ARGS_LENGTH {
@@ -187,10 +188,10 @@ impl Config {
 mod tests {
 
     use std::error::Error;
-    use super::configure_structures::Input;
+    use super::configure_structures::DataType;
     use super::Config;
 
-    fn config_test_template(selector: &str, input_path: &str, output_path: &str, additional: Option<&str>) -> Result<Input, Box<dyn Error>> {
+    fn config_test_template(selector: &str, input_path: &str, output_path: &str, additional: Option<&str>) -> Result<DataType, Box<dyn Error>> {
         
         let mut args = vec![
             "PROGRAM_NAME".to_string(),
