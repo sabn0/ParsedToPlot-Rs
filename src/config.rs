@@ -3,7 +3,7 @@
 // Under MIT license
 //
 
-use std::fs::{self};
+use std::{fs::{self}, error::Error};
 
 const ARGS_LENGTH: usize = 4;
 const IMG_TYPE: &str = ".png";
@@ -12,6 +12,7 @@ const CONSTITUENCY: &str = "c";
 
 pub mod configure_structures {
 
+    use std::error::Error;
     use std::fs::File;
     use std::io::{self, BufRead};
     use std::vec;
@@ -25,30 +26,30 @@ pub mod configure_structures {
     pub(in crate::config) struct Constituency {}
 
     /// An enum that wraps the data types supported.
-    #[derive(Clone)]
+    #[derive(Clone, Debug)]
     pub enum Input {
         Dependency(Vec<Vec<String>>),
         Constituency(Vec<String>)
     }
 
     impl TryFrom<Input> for Vec<String> {
-        type Error = ();
+        type Error = Box<dyn Error>;
 
         fn try_from(value: Input) -> Result<Self, Self::Error> {
             match value {
                 Input::Constituency(x) => Ok(x),
-                _ => Err(())
+                _ => Err(format!("could not convert value {:?} to {}", value, std::any::type_name::<Self>()).into())
             }
         }
     }
 
     impl TryFrom<Input> for Vec<Vec<String>> {
-        type Error = ();
-
+        type Error = Box<dyn Error>;
+        
         fn try_from(value: Input) -> Result<Self, Self::Error> {
             match value {
                 Input::Dependency(x) => Ok(x),
-                _ => Err(())
+                _ => Err(format!("could not convert value {:?} to {}", value, std::any::type_name::<Self>()).into())
             }
         }
     }
@@ -70,18 +71,16 @@ pub mod configure_structures {
     /// The trait is used from within the config implementation.
     /// Not called directly by the user.
     pub (in crate::config) trait Reader {
-        fn read_input(&self, file_path: &str) -> Result<Input, String>;
+        fn read_input(&self, file_path: &str) -> Result<Input, Box<dyn Error>>;
     }
 
     impl Reader for Dependency {
         
-        fn read_input(&self, file_path: &str) -> Result<Input, String> {
+        fn read_input(&self, file_path: &str) -> Result<Input, Box<dyn Error>> {
 
             // load dependencies
-            let lines = match File::open(file_path) {
-                Ok(f) => io::BufReader::new(f).lines(),
-                Err(e) => return Err(e.to_string())
-            };
+            let in_file = File::open(file_path)?; 
+            let lines = io::BufReader::new(in_file).lines();
 
             let mut sequences = Vec::new();
             let mut depencdency: Vec<String> = Vec::new();
@@ -112,19 +111,14 @@ pub mod configure_structures {
 
     impl Reader for Constituency {
 
-        fn read_input(&self, file_path: &str) -> Result<Input, String> {
+        fn read_input(&self, file_path: &str) -> Result<Input, Box<dyn Error>> {
 
-            // load constituencies
-            let mut sequences = Vec::new();
-            let lines = match File::open(file_path) {
-                Ok(f) => io::BufReader::new(f).lines(),
-                Err(e) => return Err(e.to_string())
-            };
-
-            for line in lines {
-                sequences.push(line.unwrap());
-            }
-
+            let in_file = File::open(file_path)?; 
+            let lines = io::BufReader::new(in_file).lines();
+            let sequences = lines.map(|line| line
+                .expect("un string-like line"))
+                .collect::<Vec<String>>();
+            
             return Ok(Input::Constituency(sequences))
         }
     }
@@ -164,12 +158,12 @@ impl Config {
     /// 
     /// Examples are given in the lib.rs file
     /// 
-    pub fn new(args: &[String]) -> Result<Input, String> {
+    pub fn new(args: &[String]) -> Result<Input, Box<dyn Error>> {
 
         // validate number of arguments supplied
         if args.len() != ARGS_LENGTH {
             let custom_err = format!("there should be {} arguments supllied: constituency file and output dir, found {} ", ARGS_LENGTH, args.len());
-            return Err(custom_err);
+            return Err(custom_err.into());
         }
 
         // load output directory path and try to create:
@@ -181,8 +175,7 @@ impl Config {
         } else if DEPENDENCY == args[1] {
             return Box::new (Dependency {}).read_input(&args[2]);
         } else {
-            return Err(format!("Resulted in error in parsing: input selector {} is invalid", args[1]));
-        
+            return Err(format!("Resulted in error in parsing: input selector {} is invalid", args[1]).into());
         }
 
     }
@@ -193,10 +186,11 @@ impl Config {
 #[cfg(test)]
 mod tests {
 
+    use std::error::Error;
     use super::configure_structures::Input;
     use super::Config;
 
-    fn config_test_template(selector: &str, input_path: &str, output_path: &str, additional: Option<&str>) -> Result<Input, String> {
+    fn config_test_template(selector: &str, input_path: &str, output_path: &str, additional: Option<&str>) -> Result<Input, Box<dyn Error>> {
         
         let mut args = vec![
             "PROGRAM_NAME".to_string(),
