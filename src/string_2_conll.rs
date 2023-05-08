@@ -3,6 +3,8 @@
 // Under MIT license
 //
 
+use std::error::Error;
+
 use crate::generic_traits::generic_traits::String2StructureBuilder;
 
 const CONLL_SIZE: usize = 10;
@@ -87,7 +89,10 @@ pub struct String2Conll {
     tokens: Vec<Token>
 }
 
-impl String2StructureBuilder<Vec<Token>, Vec<String>> for String2Conll {
+impl String2StructureBuilder for String2Conll {
+
+    type Input = Vec<String>;
+    type Out = Vec<Token>;
 
     /// 
     /// Initialization of a String2Conll object
@@ -111,7 +116,7 @@ impl String2StructureBuilder<Vec<Token>, Vec<String>> for String2Conll {
     ///
     /// Get a copy of the conll (should be called after build)
     /// 
-    fn get_structure(&self) -> Vec<Token> {
+    fn get_structure(&self) -> Self::Out {
         return self.tokens.clone()
     }
 
@@ -147,7 +152,7 @@ impl String2StructureBuilder<Vec<Token>, Vec<String>> for String2Conll {
     /// assert!(last_token.get_token_id().to_string() == "4");
     /// ```
     /// 
-    fn build(&mut self, input: &mut Vec<String>) -> Result<(), String> {
+    fn build(&mut self, input: &mut Self::Input) -> Result<(), Box<dyn Error>> {
         // the input is a vector of strings, each string is a line in conll (token string represenation)
 
         for line in input.iter() {

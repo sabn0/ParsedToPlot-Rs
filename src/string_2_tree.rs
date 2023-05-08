@@ -3,25 +3,29 @@
 // Under MIT license
 //
 
+use std::error::Error;
 use id_tree::*;
 use id_tree::InsertBehavior::*;
 use id_tree::{Tree, NodeId};
 use crate::generic_traits::generic_traits::String2StructureBuilder;
 
-const NODE_DELIMITER: &str = " (";
-const ROOT_DELIMITER: &str = "(S";
-const ROOT_LABEL: &str = "S";
-const EMPTY_TREE: &str = "(S)";
-const NULL_TREE: &str = "()";
+const NODE_DELIMITER: &str = " ";
 const CLOSE_BRACKETS: char = ')';
+const OPEN_BRACKETS: char = '(';
 
-/// A String2Tree object, wrap the Tree-String id_tree object
+
+/// A String2Tree object, wrap the Tree-String id_tree object.
+/// T mentions the generic type of the data (string, numeric, etc).
 pub struct String2Tree {
     tree: Tree<String>,
     parent_node_id: Option<NodeId>,
+    level_balance: i32
 }
 
-impl String2StructureBuilder<Tree<String>, String> for String2Tree {
+impl String2StructureBuilder for String2Tree {
+
+    type Input = String;
+    type Out = Tree<String>;
 
     /// 
     /// Initialization of a String2Tree object
@@ -38,14 +42,15 @@ impl String2StructureBuilder<Tree<String>, String> for String2Tree {
     fn new() -> Self {
         Self {
             tree: Tree::new(),
-            parent_node_id: None
+            parent_node_id: None,
+            level_balance: 0
         }
     }
 
     ///
     /// Get a copy of a tree (should be called after build)
     /// 
-    fn get_structure(&self) -> Tree<String> {
+    fn get_structure(&self) -> Self::Out {
         return self.tree.clone();
     }
 
@@ -70,108 +75,81 @@ impl String2StructureBuilder<Tree<String>, String> for String2Tree {
     /// assert_eq!("S", tree.get(tree.root_node_id().unwrap()).unwrap().data());
     /// ```
     /// 
-    fn build(&mut self, input: &mut String) -> Result<(), String> {
+    fn build(&mut self, input: &mut Self::Input) -> Result<(), Box<dyn Error>> {
 
         // if the string is empty the algoritm has finished
         if input.is_empty() {
+            assert_eq!(self.level_balance, 0, "number of closers and openers don't match");
             return Ok(());
         }
 
         // if constituency does not have open delimiter it's the last iteration
         // else, split by the delimeter
-        let (left, right) = match input.split_once(NODE_DELIMITER) {
-            Some((left, right)) => (left.trim(), right.trim()),
-            None => (input.trim(), "")
+        let (left, mut right) = match input.split_once(NODE_DELIMITER) {
+            Some((left, right)) => (left.trim().to_owned(), right.trim().to_owned()),
+            None => (input.trim().to_owned(), "".to_owned())
         };
-        let mut right = right.to_string();
 
-        // if root is found, add to tree and update parent, then recurse . else, panic
-        match left {
-            ROOT_DELIMITER | EMPTY_TREE => {
-                let node_content = String::from(ROOT_LABEL);
-                let node = Node::new(node_content);                
-                let node_id = match self.tree.insert(node, AsRoot) {
-                    Ok(node_id) => node_id,
-                    Err(_e) => return Err(format!("could not insert root to tree"))
-                };
-                self.parent_node_id = Some(node_id);
-                self.build(&mut right)?;
-                return Ok(());
-            }, // the case of empty tree is valid
-            NULL_TREE => return Err(format!("The input tree is null and not valid")),
+        // closure to add node to the tree
+        let mut add_node = |node_str: &str, parent_id: &Option<&NodeId>| -> Result<NodeId, Box<dyn Error>> {
+
+            // create a new node from the input str
+            let node_string = String::from(node_str);
+            let new_node = Node::new(node_string);
+
+            // add the node to the tree. This can either be the root of the tree or normal node
+            let new_node_id = match parent_id {
+                // case of a normal node, parent_id already exists. Add new node under parent
+                Some(parent_id) => self.tree.insert(new_node, UnderNode(parent_id))?,
+                // case of a root node, parent_id is None. Add new node as root
+                None => self.tree.insert(new_node, AsRoot)?
+            };
+
+            Ok(new_node_id)
+        };
+
+        // we have done a split by " ". We handle the left size and keep the right to next iter
+        // we will match the number of ")" in left. 
+        let mut closers = left.matches(CLOSE_BRACKETS).count();
+        let openers = left.matches(OPEN_BRACKETS).count();
+        assert!(openers <= 1, "invalid input structure, consecutive open brackets");
+        assert!(openers > 0 || closers > 0, "found a node without matching parenthesis");
+        self.level_balance += openers as i32 - closers as i32;
+        match closers {
+            0 => {
+
+                // If = 0, it is an opening node, "(A" . I assert the number of openings to validate the structure.
+                // extract the data from the element.
+                let node_str = left.trim_matches(OPEN_BRACKETS);
+                // Create a new node and add to the tree
+                let parent_id = self.parent_node_id.as_ref();
+                let new_node_id = add_node(node_str, &parent_id)?;
+
+                // make the new node the parent for next iteration
+                self.parent_node_id = Some(new_node_id);
+
+            },
             _ => {
-                if self.parent_node_id.is_none() {
-                    panic!("The input did not start with root")
+                
+                // If > 0 , it is a leaf. it can look like "A)" or "(A)", depending on double or singular
+                let node_str = left.trim_matches(CLOSE_BRACKETS).trim_matches(OPEN_BRACKETS);
+                assert_ne!(node_str, "", "found a null node in input string");
+
+                // Create a new node and add to the tree
+                let parent_id = self.parent_node_id.as_ref();
+                let new_node_id = add_node(node_str, &parent_id)?;
+
+                // double or singular leaves change the requested parent for next iteration. In singular leaves,
+                // K closures mean that the parent for next iteration is K levels above. In double leaves,
+                // K closures mean that the parent for next iteration is K+1 levels above. 
+                closers += 1-openers; 
+
+                // ignore the very last closer because there is no global parent beyond the most remote closers
+                if right.is_empty() {
+                     closers -= 1;
                 }
+                self.update_parent(&new_node_id, closers)?;               
             }
-        }
-
-        // number of closers in left determines action:
-        // 0 closers means treating as node.
-        // with at least 1 closer, the tree can either be a constituency tree
-        // with "double leafs", or a regular tree with only one leaf.
-        let mut closers = left.matches(CLOSE_BRACKETS).count() as i32;
-        match closers.cmp(&0) {
-            std::cmp::Ordering::Greater => {
-
-                let split_vec: Vec<&str> = left.trim_matches(CLOSE_BRACKETS).split(' ').collect();
-                
-                // handle cases of one leaf or two leafs using match guard for creating the parent in both cases
-                // but only creating a child in the two leaves case
-                let child_id = match split_vec.len() {
-                    n @ 1..=2 => {
-                        
-                        let upper_leaf = split_vec[0].trim();
-                        let parent_id = match self.parent_node_id.as_ref() {
-                            Some(parent_id) => parent_id,
-                            None => return Err(format!("could not find ancestor for node that is not root"))
-                        };
-                        
-                        let child_node_content = String::from(upper_leaf);
-                        let child_node = Node::new(child_node_content);
-                        let child_id = match self.tree.insert(child_node, UnderNode(parent_id)) {
-                            Ok(child_id) => child_id,
-                            Err(_e) => return Err(format!("could not insert child under parent"))
-                        };
-                        
-                        if n == 2 {
-                            let lower_leaf = split_vec[1].trim();
-                            let grand_child_node_content = String::from(lower_leaf);
-                            let grand_child_node = Node::new(grand_child_node_content);
-                            let _grand_child_id = self.tree.insert(grand_child_node, UnderNode(&child_id)
-                            ).unwrap(); // we know this is a good child_id from the upper case
-                        }
-                        child_id
-
-                    },
-                    _ => panic!("leaf input has an invalid structure")
-                };
-
-                if right.is_empty() {
-                    closers = closers -1;
-                }
-                self.update_parent(&child_id, closers)?;
-
-            },
-            std::cmp::Ordering::Equal => {
-                
-                if right.is_empty() {
-                    panic!("Did not find trailing closers")
-                }
-
-                let parent_id = match self.parent_node_id.as_ref() {
-                    Some(parent_id) => parent_id,
-                    None => panic!("could not find ancestor for node that is not root")
-                };
-
-                let child_node_content = String::from(left.to_string());
-                let child_node = Node::new(child_node_content);
-                let child_node_id: NodeId = self.tree.insert(child_node, UnderNode(parent_id)
-                ).unwrap(); // we know this is a good child_id from the upper case
-                self.parent_node_id = Some(child_node_id);
-
-            },
-            std::cmp::Ordering::Less => panic!("found less closers than openings")
         }
 
         self.build(&mut right)?;
@@ -182,27 +160,24 @@ impl String2StructureBuilder<Tree<String>, String> for String2Tree {
 
     /// A method that updates the current parent node in the parsing process.
     /// No need to call this method directly as users.
-    fn update_parent(&mut self, item_id: &NodeId, n: i32) -> Result<(), String> {
+    fn update_parent(&mut self, item_id: &NodeId, closers: usize) -> Result<(), Box<dyn Error>> {
 
-        let mut ancestors_ids_iterator = match self.tree.ancestor_ids(item_id) {
-            Ok(ancestors_ids_iterator) => ancestors_ids_iterator,
-            Err(_e) => return Err(format!("could not find ancestors for node_id"))
-        };
+        if closers > 0 {
+            let ancestors_ids = self.tree.ancestor_ids(item_id)?.collect::<Vec<&NodeId>>();
+            let parent_node_id = ancestors_ids
+            .get(closers-1)
+            .expect("inconsistent number of closers and ancestors for node id")
+            .to_owned()
+            .to_owned();        
+            self.parent_node_id = Some(parent_node_id);
+        } else {
+            self.parent_node_id = None;
+        }
 
-        let mut parent_node_id: Option<NodeId> = None::<NodeId>;
-        for _i in 1..=n {
-            
-            parent_node_id = match ancestors_ids_iterator.next() {
-                Some(parent_node_id) => Some(parent_node_id.to_owned()),
-                None => return Err(format!("inconsistent number of closers and ancestors for node id"))
-            };
-        }        
-        self.parent_node_id = parent_node_id;
+
         Ok(())
 
     }
-
-
 
 }
 
@@ -238,10 +213,7 @@ mod tests {
         let mut constituency = String::from(example);
         let mut string2tree: String2Tree = String2StructureBuilder::new();
         
-        let _result = match string2tree.build(&mut constituency) {
-            Ok(_result) => {},
-            Err(e) => panic!("{}", e)
-        };
+        string2tree.build(&mut constituency).unwrap();
 
         let tree = string2tree.get_structure();
         let root = match tree.root_node_id() {
@@ -283,7 +255,7 @@ mod tests {
 
     #[test]
     fn math_mode() {
-        let example = "(S (0 (1) (2 (3)))";
+        let example = "(S (0 (1) (2 (3))))";
         let golden = vec!["S", "0", "1", "2", "3"];
         string2tree_template(example, golden, "pre");
     }
@@ -296,7 +268,14 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "The input tree is null and not valid")]
+    fn non_trivial_root() {
+        let example = "(0 (1))";
+        let golden = vec!["0", "1"];
+        string2tree_template(example, golden, "pre");
+    }
+
+    #[test]
+    #[should_panic(expected = "found a null node in input string")]
     fn null_tree() {
         let example = "()";
         let golden = vec![""];
@@ -304,7 +283,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Did not find trailing closers")]
+    #[should_panic(expected = "number of closers and openers don't match")]
     fn missing_closures() {
         let example = "(S (0 (1";
         let golden = vec!["S", "0", "1"];
@@ -312,15 +291,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "The input did not start with root")]
-    fn missing_root() {
-        let example = "(0 (1))";
-        let golden = vec!["0", "1"];
-        string2tree_template(example, golden, "pre");
-    }
-
-    #[test]
-    #[should_panic(expected = "The input did not start with root")]
+    #[should_panic(expected = "found a node without matching parenthesis")]
     fn missing_opening() {
         let example = "S (0 (1";
         let golden = vec!["S", "0", "1"];

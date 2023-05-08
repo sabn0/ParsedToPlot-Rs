@@ -6,15 +6,22 @@
 /// defines generic traits for building and plotting
 pub mod generic_traits {
 
+    use std::error::Error;
     use id_tree::NodeId;
     use plotters::prelude::{DrawingBackend, CoordTranslate, ChartContext};
 
+    // I move this trait to use associated types. Once the user selects the types the implementation
+    // for that type is singular, String2StructureBuilder will not be implemented more than once for each type.
+    // The associated types define the input and output of the functionalities of the trait.
     /// A trait that contains the needed functionallity to build a string-to-structure process.
-    pub trait String2StructureBuilder<T, U> {
+    pub trait String2StructureBuilder {
+        type Input;
+        type Out;
+
         fn new() -> Self;
-        fn get_structure(&self) -> T;
-        fn build(&mut self, input: &mut U) -> Result<(), String>;
-        fn update_parent(&mut self, _item_id: &NodeId, _n: i32) -> Result<(), String> { todo!() } // optional
+        fn get_structure(&self) -> Self::Out;
+        fn build(&mut self, input: &mut Self::Input) -> Result<(), Box<dyn Error>>;
+        fn update_parent(&mut self, _item_id: &NodeId, _n: usize) -> Result<(), Box<dyn Error>> { todo!() } // optional
     }
 
     /// A trait that contains the needed functionallity to build a structure-to-plot process.
