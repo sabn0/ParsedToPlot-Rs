@@ -15,7 +15,7 @@ const SPACE: &str = " ";
     doube_leaf: bool
 }
 
-
+#[allow(dead_code)]
 impl Tree2String {
 
     fn new(tree: Tree<String>, double_leaf: bool) -> Self {
