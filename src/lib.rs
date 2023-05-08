@@ -197,11 +197,13 @@ mod string_2_tree;
 mod tree_2_plot;
 mod generic_traits;
 mod sub_tree_children;
+mod tree_2_string;
 
 pub use config::Config;
 pub use string_2_tree::String2Tree;
 pub use string_2_conll::String2Conll;
 pub use tree_2_plot::Tree2Plot;
+pub use tree_2_string::Tree2String;
 pub use conll_2_plot::Conll2Plot;
 pub use generic_traits::generic_traits::String2StructureBuilder;
 pub use generic_traits::generic_traits::Structure2PlotBuilder;
