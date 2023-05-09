@@ -31,9 +31,8 @@ pub mod generic_traits {
 
     /// A trait that contains the needed functionallity to plot a structure-to-plot that is built.
     /// Not called by the user.
-    pub(crate) trait Structure2PlotPlotter<W, X, Y> {
+    pub(crate) trait Structure2PlotPlotter<X> {
         fn plot<'a, DB, CT>(&self, chart: &mut ChartContext<'a, DB, CT>, plot_data_vec: Vec<X>, font_style: (&str, i32)) -> Result<(), Box<dyn Error>> where DB: DrawingBackend + 'a, CT: CoordTranslate<From = (f32, f32)>;
-        fn walk(&self, item: Option<&W>, walk_args: Y, plot_data_vec: &mut Vec<X>) -> Result<(), Box<dyn Error>> ;
     }
 
 }

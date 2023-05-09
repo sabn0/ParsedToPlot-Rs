@@ -22,29 +22,6 @@ pub struct String2Tree {
     level_balance: i32
 }
 
-impl String2Tree {
-
-    /// A method that updates the current parent node in the parsing process.
-    /// No need to call this method directly as users.
-    fn update_parent(&mut self, item_id: &NodeId, closers: usize) -> Result<(), Box<dyn Error>> {
-
-        if closers > 0 {
-            let ancestors_ids = self.tree.ancestor_ids(item_id)?.collect::<Vec<&NodeId>>();
-            let parent_node_id = ancestors_ids
-            .get(closers-1)
-            .expect("inconsistent number of closers and ancestors for node id")
-            .to_owned()
-            .to_owned();        
-            self.parent_node_id = Some(parent_node_id);
-        } else {
-            self.parent_node_id = None;
-        }
-
-        Ok(())
-    }
-
-}
-
 impl String2StructureBuilder for String2Tree {
 
     type Input = String;
@@ -180,6 +157,29 @@ impl String2StructureBuilder for String2Tree {
         
     }
 
+
+}
+
+impl String2Tree {
+
+    /// A method that updates the current parent node in the parsing process.
+    /// No need to call this method directly as users.
+    fn update_parent(&mut self, item_id: &NodeId, closers: usize) -> Result<(), Box<dyn Error>> {
+
+        if closers > 0 {
+            let ancestors_ids = self.tree.ancestor_ids(item_id)?.collect::<Vec<&NodeId>>();
+            let parent_node_id = ancestors_ids
+            .get(closers-1)
+            .expect("inconsistent number of closers and ancestors for node id")
+            .to_owned()
+            .to_owned();        
+            self.parent_node_id = Some(parent_node_id);
+        } else {
+            self.parent_node_id = None;
+        }
+
+        Ok(())
+    }
 
 }
 

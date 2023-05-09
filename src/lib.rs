@@ -198,6 +198,7 @@ mod tree_2_plot;
 mod generic_traits;
 mod sub_tree_children;
 mod tree_2_string;
+mod walk_tree;
 
 pub use config::Config;
 pub use string_2_tree::String2Tree;

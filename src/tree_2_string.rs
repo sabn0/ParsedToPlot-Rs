@@ -4,7 +4,9 @@
 //
 
 use id_tree::*;
-use std::error::Error;
+use std::{error::Error};
+
+use crate::{walk_tree::{WalkActions, Accumulator, Accumulateable}};
 
 const CLOSE_BRACKETS: char = ')';
 const OPEN_BRACKET: &str = "(";
@@ -15,42 +17,81 @@ const SPACE: &str = " ";
     doube_leaf: bool
 }
 
+impl WalkActions for Tree2String {
+
+    fn init_walk(&self, _root_node_id: &NodeId, _data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) {}
+
+    fn finish_trajectory(&self, node_id: &NodeId, data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) -> Result<(), Box<dyn Error>> {
+
+        // if the tree is a double leaf tree (constituency) then 
+        let node_data = self.tree.get(node_id)?.data();
+        match self.doube_leaf {
+            true => data.push_item(Box::new(format!("{}{}", SPACE.to_string(), node_data))),
+            false => data.push_item(Box::new(format!("{}{}{}{}", SPACE.to_string(), OPEN_BRACKET.to_string(), node_data, CLOSE_BRACKETS.to_string())))
+        };
+        Ok(())
+    }
+
+    fn on_node(&self, node_id: &NodeId, data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) -> Result<(), Box<dyn Error>> {
+
+        let pad = if data.check_is_empty() { "" } else { " " };
+        let node_data = self.tree.get(node_id)?.data();
+        data.push_item(Box::new(format!("{}{}{}", pad.to_string(), OPEN_BRACKET.to_string(), node_data)));
+        Ok(())
+    }
+
+    fn on_child() {
+        todo!()
+    }
+
+    fn finish_recursion() {
+        todo!()
+    }
+
+
+
+}
+
 #[allow(dead_code)]
 impl Tree2String {
 
     fn new(tree: Tree<String>, double_leaf: bool) -> Self {
         Self {
             tree: tree,
-            doube_leaf: double_leaf,
+            doube_leaf: double_leaf
         }
     }
 
     fn walk(&self, item: Option<&NodeId>, constituency: &mut String) -> Result<(), Box<dyn Error>> {
 
         if item.is_none() {
+
             // handle first iteration over tree
-            let root_node_id = self.tree.root_node_id().ok_or("input tree is empty")?;
+            let root_node_id: &NodeId = self.tree.root_node_id().ok_or("input tree is empty")?;
+            
             self.walk(Some(root_node_id), constituency)?;
+            
             return Ok(());
         }
 
         // first print the data of this node
         let node_id = item.unwrap();
-        let node_data = self.tree.get(node_id)?.data();
         let children_ids: Vec<&NodeId> = self.tree.children_ids(node_id)?.collect();
 
         // if got here, handle the case of a leaf
         if children_ids.is_empty() {
-            // if the tree is a double leaf tree (constituency) then 
+            let node_data = self.tree.get(node_id)?.data();
             match self.doube_leaf {
                 true => *constituency += &format!("{}{}", SPACE.to_string(), node_data),
                 false => *constituency += &format!("{}{}{}{}", SPACE.to_string(), OPEN_BRACKET.to_string(), node_data, CLOSE_BRACKETS.to_string())
             };
+
             return Ok(());
         }
         
         // not padding the root with left side space
         let pad = if constituency.is_empty() { "" } else { " " };
+        let node_data = self.tree.get(node_id)?.data();
         *constituency += &format!("{}{}{}", pad.to_string(), OPEN_BRACKET.to_string(), node_data);
         
         // do DFS for the children of the current node_id, that has at least one child

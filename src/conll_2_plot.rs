@@ -16,7 +16,7 @@ const FONT_CONST: f32 = 7.5 / 5.0;
 
 /// A struct that wraps the needed fileds to plot a token
 #[derive(Clone)]
-pub struct PlotData {
+pub struct ConllPlotData {
     start: f32,                 // start x position
     end: f32,                   // end x position
     deprel: String,
@@ -72,7 +72,7 @@ impl Structure2PlotBuilder<Vec<Token>> for Conll2Plot {
 
         // first run the forward part: extraction of the plotting data through recursion
         let mut walk_args: Vec<[f32; 2]> = vec![[0.0, 0.0]; self.seq_length];
-        let mut plot_data_vec: Vec<PlotData> = Vec::new();
+        let mut plot_data_vec: Vec<ConllPlotData> = Vec::new();
         self.walk(None, &mut walk_args, &mut plot_data_vec)?;
 
         // determine general plot settings for the example
@@ -122,9 +122,9 @@ impl Structure2PlotBuilder<Vec<Token>> for Conll2Plot {
 /// This is a plotting helper implementation of the Structure2PlotPlotter trait.
 /// The methods should not be called direcly by the user, rather used by the builder.
 /// 
-impl Structure2PlotPlotter<Token, PlotData, &mut Vec<[f32; 2]>> for Conll2Plot {
+impl Structure2PlotPlotter<ConllPlotData> for Conll2Plot {
 
-    fn plot<'a, DB, CT>(&self, chart: &mut ChartContext<'a, DB, CT>, plot_data_vec: Vec<PlotData>, font_style: (&str, i32)) -> Result<(), Box<dyn Error>>
+    fn plot<'a, DB, CT>(&self, chart: &mut ChartContext<'a, DB, CT>, plot_data_vec: Vec<ConllPlotData>, font_style: (&str, i32)) -> Result<(), Box<dyn Error>>
     where DB: DrawingBackend + 'a, CT: CoordTranslate<From = (f32, f32)> {
         
         let text_style = TextStyle::from(font_style)
@@ -164,7 +164,13 @@ impl Structure2PlotPlotter<Token, PlotData, &mut Vec<[f32; 2]>> for Conll2Plot {
         Ok(())
     }
 
-    fn walk(&self, item: Option<&Token>, walk_args: &mut Vec<[f32; 2]>, plot_data_vec: &mut Vec<PlotData>) -> Result<(), Box<dyn Error>> {
+
+}
+
+impl Conll2Plot {
+
+
+    fn walk(&self, item: Option<&Token>, walk_args: &mut Vec<[f32; 2]>, plot_data_vec: &mut Vec<ConllPlotData>) -> Result<(), Box<dyn Error>> {
         
         // get root of the sequence if not given
         if item.is_none() {
@@ -232,12 +238,8 @@ impl Structure2PlotPlotter<Token, PlotData, &mut Vec<[f32; 2]>> for Conll2Plot {
 
     }
 
-}
 
-impl Conll2Plot {
-
-
-    fn extract(&self, token: &Token, walk_args: &mut Vec<[f32; 2]>) -> PlotData {
+    fn extract(&self, token: &Token, walk_args: &mut Vec<[f32; 2]>) -> ConllPlotData {
 
         let token_head = token.get_token_head();
         let token_id = token.get_token_id();
@@ -278,7 +280,7 @@ impl Conll2Plot {
 
         let height = update();
 
-        let plot_args = PlotData {
+        let plot_args = ConllPlotData {
             start: token_head,
             end: token_id,
             deprel: token.get_token_deprel(),
