@@ -3,6 +3,8 @@
 // Under MIT license
 //
 
+use std::error::Error;
+
 use super::string_2_conll::*;
 use plotters::{prelude::*, style::text_anchor::{Pos, HPos, VPos}};
 use crate::generic_traits::generic_traits::{Structure2PlotBuilder, Structure2PlotPlotter};
@@ -66,12 +68,12 @@ impl Structure2PlotBuilder<Vec<Token>> for Conll2Plot {
         }
     }
 
-    fn build(&mut self, save_to: &str) {
+    fn build(&mut self, save_to: &str) -> Result<(), Box<dyn Error>> {
 
         // first run the forward part: extraction of the plotting data through recursion
         let mut walk_args: Vec<[f32; 2]> = vec![[0.0, 0.0]; self.seq_length];
         let mut plot_data_vec: Vec<PlotData> = Vec::new();
-        self.walk(None, &mut walk_args, &mut plot_data_vec);
+        self.walk(None, &mut walk_args, &mut plot_data_vec)?;
 
         // determine general plot settings for the example
         let seq_length = self.seq_length as f32;
@@ -108,9 +110,9 @@ impl Structure2PlotBuilder<Vec<Token>> for Conll2Plot {
         .draw()
         .unwrap();
 
-        self.plot(&mut chart, plot_data_vec, font_style);
+        self.plot(&mut chart, plot_data_vec, font_style)?;
         
-        
+        Ok(())
     }
 
 }
@@ -122,7 +124,8 @@ impl Structure2PlotBuilder<Vec<Token>> for Conll2Plot {
 /// 
 impl Structure2PlotPlotter<Token, PlotData, &mut Vec<[f32; 2]>> for Conll2Plot {
 
-    fn plot<'a, DB, CT>(&self, chart: &mut ChartContext<'a, DB, CT>, plot_data_vec: Vec<PlotData>, font_style: (&str, i32)) where DB: DrawingBackend + 'a, CT: CoordTranslate<From = (f32, f32)> {
+    fn plot<'a, DB, CT>(&self, chart: &mut ChartContext<'a, DB, CT>, plot_data_vec: Vec<PlotData>, font_style: (&str, i32)) -> Result<(), Box<dyn Error>>
+    where DB: DrawingBackend + 'a, CT: CoordTranslate<From = (f32, f32)> {
         
         let text_style = TextStyle::from(font_style)
         .transform(FontTransform::None)
@@ -158,9 +161,10 @@ impl Structure2PlotPlotter<Token, PlotData, &mut Vec<[f32; 2]>> for Conll2Plot {
             chart.plotting_area().draw(&text_draw(plot_data.end, 0.0, plot_data.form.clone())).unwrap();
         }
 
+        Ok(())
     }
 
-    fn walk(&self, item: Option<&Token>, walk_args: &mut Vec<[f32; 2]>, plot_data_vec: &mut Vec<PlotData>) {
+    fn walk(&self, item: Option<&Token>, walk_args: &mut Vec<[f32; 2]>, plot_data_vec: &mut Vec<PlotData>) -> Result<(), Box<dyn Error>> {
         
         // get root of the sequence if not given
         if item.is_none() {
@@ -185,12 +189,12 @@ impl Structure2PlotPlotter<Token, PlotData, &mut Vec<[f32; 2]>> for Conll2Plot {
             
             let root_token = &self.tokens[root_id.unwrap() as usize];
 
-            self.walk(Some(root_token), walk_args, plot_data_vec);
+            self.walk(Some(root_token), walk_args, plot_data_vec)?;
             
             let this_plot_data = self.extract(root_token, walk_args);
             plot_data_vec.push(this_plot_data);
             
-            return
+            return Ok(())
 
         }
 
@@ -218,14 +222,20 @@ impl Structure2PlotPlotter<Token, PlotData, &mut Vec<[f32; 2]>> for Conll2Plot {
 
             let child_token = &self.tokens[child_id as usize];
             if !self.leaf_ids.contains(&child_id) {
-                self.walk(Some(child_token), walk_args, plot_data_vec);
+                self.walk(Some(child_token), walk_args, plot_data_vec)?;
             }
 
             let this_plot_data = self.extract(child_token, walk_args);
             plot_data_vec.push(this_plot_data);
         }
+        Ok(())
 
     }
+
+}
+
+impl Conll2Plot {
+
 
     fn extract(&self, token: &Token, walk_args: &mut Vec<[f32; 2]>) -> PlotData {
 

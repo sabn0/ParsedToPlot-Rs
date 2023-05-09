@@ -6,6 +6,7 @@
 use id_tree::*;
 use plotters::{prelude::*, style::text_anchor::*};
 use std::collections::HashMap;
+use std::error::Error;
 use crate::generic_traits::generic_traits::{Structure2PlotBuilder, Structure2PlotPlotter};
 use crate::sub_tree_children::sub_tree_children::SubChildren;
 
@@ -58,11 +59,11 @@ impl Structure2PlotBuilder<Tree<String>> for Tree2Plot {
         }
     }
 
-    fn build(&mut self, save_to: &str) {
+    fn build(&mut self, save_to: &str) -> Result<(), Box<dyn Error>> {
         
         // run the recursive extraction
         let mut plot_data_vec: Vec<PlotData> = Vec::new();
-        self.walk(None, None, &mut plot_data_vec);
+        self.walk(None, None, &mut plot_data_vec)?;
 
         // calculate dimensions of plot based on tree height and number of leaf-children in sub tree
         let tree_height = self.tree.height();
@@ -99,7 +100,8 @@ impl Structure2PlotBuilder<Tree<String>> for Tree2Plot {
         .draw()
         .unwrap();
 
-        self.plot(&mut chart, plot_data_vec, font_style);
+        self.plot(&mut chart, plot_data_vec, font_style)?;
+        Ok(())
 
     }
 
@@ -111,7 +113,8 @@ impl Structure2PlotBuilder<Tree<String>> for Tree2Plot {
 /// 
 impl Structure2PlotPlotter<NodeId, PlotData, Option<PlotData>> for Tree2Plot {
 
-    fn plot<'a, DB, CT>(&self, chart: &mut ChartContext<'a, DB, CT>, plot_data_vec: Vec<PlotData>, font_style: (&str, i32)) where DB: DrawingBackend + 'a, CT: CoordTranslate<From = (f32, f32)> {
+    fn plot<'a, DB, CT>(&self, chart: &mut ChartContext<'a, DB, CT>, plot_data_vec: Vec<PlotData>, font_style: (&str, i32)) -> Result<(), Box<dyn Error>> 
+    where DB: DrawingBackend + 'a, CT: CoordTranslate<From = (f32, f32)> {
         
         let text_style = TextStyle::from(font_style)
         .transform(FontTransform::None)
@@ -140,58 +143,50 @@ impl Structure2PlotPlotter<NodeId, PlotData, Option<PlotData>> for Tree2Plot {
                 },
             )).unwrap();
         }
+
+        Ok(())
     }
 
-    fn walk(&self, item: Option<&NodeId>, walk_args: Option<PlotData>, plot_data_vec: &mut Vec<PlotData>) {
+    fn walk(&self, item: Option<&NodeId>, walk_args: Option<PlotData>, plot_data_vec: &mut Vec<PlotData>) -> Result<(), Box<dyn Error>>{
         
         if item.is_none() {
 
-            match self.tree.root_node_id() {
-                None => panic!("input tree is empty"),
-                Some(root_node_id) => {
-                    // get root node label and send with initial positional args to plot
-                    // bounds are set to -+ 5 but this is arbitrary and not shown on x axis.
-                    let root_node = self.tree.get(root_node_id).unwrap();
-                    let root_node_data = root_node.data();
-                    let root_plot_args = PlotData {
-                        positional_args: [0.0, 0.0, 0.0, 0.0, INIT_LEFT_BOUND, INIT_RIGHT_BOUND],
-                        label_arg: root_node_data.to_owned()
-                    };
-
-                    self.walk(Some(&root_node_id.clone()), Some(root_plot_args.clone()), plot_data_vec);
-                    plot_data_vec.push(root_plot_args);
-                    return
-                }, 
+            let root_node_id = self.tree.root_node_id().ok_or("input tree is empty")?;
+            // get root node label and send with initial positional args to plot
+            // bounds are set to -+ 5 but this is arbitrary and not shown on x axis.
+            let root_node = self.tree.get(root_node_id).unwrap();
+            let root_node_data = root_node.data();
+            let root_plot_args = PlotData {
+                positional_args: [0.0, 0.0, 0.0, 0.0, INIT_LEFT_BOUND, INIT_RIGHT_BOUND],
+                label_arg: root_node_data.to_owned()
             };
+
+            self.walk(Some(&root_node_id.clone()), Some(root_plot_args.clone()), plot_data_vec)?;
+            plot_data_vec.push(root_plot_args);
+            return Ok(())
         }
 
         // normal node extraction
         
         // get node's children, if no children finish
-        let children_ids: Vec<&NodeId> = match self.tree.children_ids(item.unwrap()) {
-            Ok(children_ids) => children_ids.collect(),
-            Err(e) => panic!("{}", e)
-        };
+        let node_id = item.unwrap();
+        let children_ids: Vec<&NodeId> = self.tree.children_ids(node_id)?.collect();
 
         // stopping condition of route
         if children_ids.is_empty() {
-            return
+            return Ok(())
         }
 
         // extract positional args
-        let walk_args = match walk_args {
-            Some(walk_args) => walk_args,
-            None => panic!("None positions args are supplied with Some node")
-        };
+        let walk_args = walk_args.ok_or("None walk args with Some item")?;
         let [x2, y2, left_bound, right_bound]: [f32; 4] = walk_args.positional_args[2..].try_into().unwrap();
 
         // for positional computation, get the total number of sub_children that are leaves for this node
         // every child of the node will be positioned by the proportion of its sub_tree compared to the 
         // total number of leaves in this sub tree.
-        let n_leaves = match self.node_id2n_sub_children.get(item.unwrap()) {
-            Some(n_leaves) => *n_leaves as f32,
-            None => panic!("didn't find node id in mapping to sub children")
-        };
+        let n_leaves = *self.node_id2n_sub_children
+        .get(node_id)
+        .ok_or("didn't find node id in mapping to sub children")? as f32;
 
         // iterate over children, save plotting data for each child recursivly
         let mut space_allocated: f32 = 0.0;
@@ -221,11 +216,12 @@ impl Structure2PlotPlotter<NodeId, PlotData, Option<PlotData>> for Tree2Plot {
                 label_arg: label
             };
             
-            self.walk(Some(child_node_id), Some(child_walk_args.clone()), plot_data_vec);
+            self.walk(Some(child_node_id), Some(child_walk_args.clone()), plot_data_vec)?;
             plot_data_vec.push(child_walk_args);
 
         }
 
+        Ok(())
     }
 
 

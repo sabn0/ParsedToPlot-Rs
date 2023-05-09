@@ -25,42 +25,37 @@ impl Tree2String {
         }
     }
 
-    fn build(&self, item: Option<&NodeId>, constituency: &mut String) -> Result<(), Box<dyn Error>>{
+    fn walk(&self, item: Option<&NodeId>, constituency: &mut String) -> Result<(), Box<dyn Error>> {
 
         if item.is_none() {
             // handle first iteration over tree
-            let root = self.tree.root_node_id().ok_or("input tree is empty")?;
-            self.build(Some(root), constituency)?;
+            let root_node_id = self.tree.root_node_id().ok_or("input tree is empty")?;
+            self.walk(Some(root_node_id), constituency)?;
             return Ok(());
         }
 
         // first print the data of this node
         let node_id = item.unwrap();
         let node_data = self.tree.get(node_id)?.data();
-        let children_ids = self.tree.children_ids(node_id)?;  // is this iterator by order of entering?
+        let children_ids: Vec<&NodeId> = self.tree.children_ids(node_id)?.collect();
 
         // if got here, handle the case of a leaf
-        let mut children_ids_peek = children_ids.peekable();
-        if children_ids_peek.peek().is_none() {
+        if children_ids.is_empty() {
             // if the tree is a double leaf tree (constituency) then 
             match self.doube_leaf {
-                true => {
-                    *constituency += &format!("{}{}", SPACE.to_string(), node_data);
-                }, 
-                false => {
-                    *constituency += &format!("{}{}{}{}", SPACE.to_string(), OPEN_BRACKET.to_string(), node_data, CLOSE_BRACKETS.to_string());
-                }
+                true => *constituency += &format!("{}{}", SPACE.to_string(), node_data),
+                false => *constituency += &format!("{}{}{}{}", SPACE.to_string(), OPEN_BRACKET.to_string(), node_data, CLOSE_BRACKETS.to_string())
             };
             return Ok(());
-        } else {
-            // not padding the root with left side space
-            let pad = if constituency.is_empty() { "" } else { " " };
-            *constituency += &format!("{}{}{}", pad.to_string(), OPEN_BRACKET.to_string(), node_data);
         }
-
+        
+        // not padding the root with left side space
+        let pad = if constituency.is_empty() { "" } else { " " };
+        *constituency += &format!("{}{}{}", pad.to_string(), OPEN_BRACKET.to_string(), node_data);
+        
         // do DFS for the children of the current node_id, that has at least one child
-        for child_id in children_ids_peek {
-            self.build(Some(child_id), constituency)?;
+        for child_id in children_ids {
+            self.walk(Some(child_id), constituency)?;
         }
 
         // here a node case is continuing its recursive calling, 
@@ -68,6 +63,7 @@ impl Tree2String {
         // the end of the sub tree 
         *constituency += &format!("{}", CLOSE_BRACKETS.to_string());
         Ok(())
+        
     }
 
 }
@@ -111,7 +107,7 @@ mod tests {
         // backward
         let mut prediction = String::from("");
         let tree2string = Tree2String::new(tree, double_leaf);
-        if let Err(e) = tree2string.build(None, &mut prediction) {
+        if let Err(e) = tree2string.walk(None, &mut prediction) {
             panic!("{}", e);
         };
 

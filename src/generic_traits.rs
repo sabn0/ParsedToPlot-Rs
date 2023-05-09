@@ -34,7 +34,6 @@ pub mod generic_traits {
     pub(crate) trait Structure2PlotPlotter<W, X, Y> {
         fn plot<'a, DB, CT>(&self, chart: &mut ChartContext<'a, DB, CT>, plot_data_vec: Vec<X>, font_style: (&str, i32)) -> Result<(), Box<dyn Error>> where DB: DrawingBackend + 'a, CT: CoordTranslate<From = (f32, f32)>;
         fn walk(&self, item: Option<&W>, walk_args: Y, plot_data_vec: &mut Vec<X>) -> Result<(), Box<dyn Error>> ;
-        fn extract(&self, _item: &W, _walk_args: Y) -> X { todo!() } // optional
     }
 
 }
