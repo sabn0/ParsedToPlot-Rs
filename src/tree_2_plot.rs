@@ -59,20 +59,23 @@ impl Structure2PlotBuilder<Tree<String>> for Tree2Plot {
         }
     }
 
-    fn build(&mut self, save_to: &str) -> Result<(), Box<dyn Error>> {
+    fn build<'a>(&mut self, save_to: &str) -> Result<(), Box<dyn Error>> {
+        
+        let walk_tree = WalkTree::new(self.tree.clone());
         
         // run the recursive extraction
         //let a: &dyn Accumulator<Item = &dyn Accumulateable> = Vec::<TreePlotData>::new();
         //let a: Box<dyn Accumulator<Item = &dyn Accumulateable>> = Box::new(Vec::<TreePlotData>::new());
-        let a: Box<dyn Accumulator<Item = Box<dyn Accumulateable>>> = Box::new(Vec::<TreePlotData>::new());
+        let plot_data_vec = Vec::<TreePlotData>::new();
+        let accumulator = plot_data_vec
+        .iter()
+        .map(|x| x.as_base());
+        let d = accumulator.collect::<Vec<&dyn Accumulateable>>();
+        let b = d.as_base();
+        let mut aa: Box<dyn Accumulator> = b.clone_box();
         
-        let mut my_vec: Vec<TreePlotData> = Vec::new();
-        let mut bar: Box<Vec<TreePlotData>> = Box::new(my_vec);
-
-        //let mut b: Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>;
-        let walk_tree = WalkTree::new(self.tree);
-        walk_tree.walk(None, self, &mut bar);
-        //self.walk(None, &mut plot_data_vec)?;
+        
+        walk_tree.walk(None, self, &mut aa);
 
         // calculate dimensions of plot based on tree height and number of leaf-children in sub tree
         let tree_height = self.tree.height();
@@ -109,7 +112,8 @@ impl Structure2PlotBuilder<Tree<String>> for Tree2Plot {
         .draw()
         .unwrap();
 
-        self.plot(&mut chart, plot_data_vec, font_style)?;
+        let ccc = aa.as_any().downcast_ref::<Vec<TreePlotData>>().unwrap().to_owned();
+        self.plot(&mut chart, ccc, font_style)?;
         Ok(())
 
     }
@@ -160,7 +164,7 @@ impl Structure2PlotPlotter<TreePlotData> for Tree2Plot {
 
 impl WalkActions for Tree2Plot {
 
-    fn init_walk(&self, root_node_id: &NodeId, data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) 
+    fn init_walk(&self, root_node_id: &NodeId, data: &mut Box<dyn Accumulator>) 
     {
         // get root node label and send with initial positional args to plot
         // bounds are set to -+ 5 but this is arbitrary and not shown on x axis.
@@ -171,14 +175,14 @@ impl WalkActions for Tree2Plot {
             label_arg: root_node_data.to_owned()
         };
 
-        data.push_item(Box::new(root_plot_args));
+        data.push_item(&root_plot_args);
     }
 
-    fn finish_trajectory(&self, _node_id: &NodeId, _data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) -> Result<(), Box<dyn Error>> {
+    fn finish_trajectory(&self, _node_id: &NodeId, _data: &mut Box<dyn Accumulator>) -> Result<(), Box<dyn Error>> {
         Ok(())
      }
 
-     fn on_node(&self, node_id: &NodeId, parameters: &mut [f32; 6], data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) -> Result<(), Box<dyn Error>> {
+     fn on_node(&self, node_id: &NodeId, parameters: &mut [f32; 6], data: &mut Box<dyn Accumulator>) -> Result<(), Box<dyn Error>> {
 
         let walk_args = data.peak_last()?.as_any().downcast_ref::<TreePlotData>().unwrap();
         let [x2, y2, left_bound, right_bound]: [f32; 4] = walk_args.positional_args[2..].try_into().unwrap();
@@ -202,7 +206,7 @@ impl WalkActions for Tree2Plot {
         Ok(())
     }
 
-    fn on_child(&self, child_node_id: &NodeId, parameters: &mut [f32; 6], data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) {
+    fn on_child(&self, child_node_id: &NodeId, parameters: &mut [f32; 6], data: &mut Box<dyn Accumulator>) {
 
         let x2 = parameters[0];
         let y2 = parameters[1];
@@ -233,12 +237,12 @@ impl WalkActions for Tree2Plot {
             label_arg: label
         };
         
-        data.push_item(Box::new(child_walk_args));
+        data.push_item(&child_walk_args);
 
 
     }
 
-    fn finish_recursion(&self, _data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) {}
+    fn finish_recursion(&self, _data: &mut Box<dyn Accumulator>) {}
 
 
 }

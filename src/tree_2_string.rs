@@ -6,7 +6,7 @@
 use id_tree::*;
 use std::{error::Error};
 
-use crate::{walk_tree::{WalkActions, Accumulator, Accumulateable}};
+use crate::{walk_tree::{WalkActions, Accumulator}};
 
 const CLOSE_BRACKETS: char = ')';
 const OPEN_BRACKET: &str = "(";
@@ -19,31 +19,30 @@ const SPACE: &str = " ";
 
 impl WalkActions for Tree2String {
 
-    fn init_walk(&self, _root_node_id: &NodeId, _data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) {}
+    fn init_walk(&self, _root_node_id: &NodeId, _data: &mut Box<dyn Accumulator>) {}
 
-    fn finish_trajectory(&self, node_id: &NodeId, data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) -> Result<(), Box<dyn Error>> {
+    fn finish_trajectory(&self, node_id: &NodeId, data: &mut Box<dyn Accumulator>) -> Result<(), Box<dyn Error>> {
 
         // if the tree is a double leaf tree (constituency) then 
         let node_data = self.tree.get(node_id)?.data();
         match self.doube_leaf {
-            true => data.push_item(Box::new(format!("{}{}", SPACE.to_string(), node_data))),
-            false => data.push_item(Box::new(format!("{}{}{}{}", SPACE.to_string(), OPEN_BRACKET.to_string(), node_data, CLOSE_BRACKETS.to_string())))
+            true => data.push_item(&format!("{}", node_data)),
+            false => data.push_item(&format!("{}{}{}", OPEN_BRACKET.to_string(), node_data, CLOSE_BRACKETS.to_string()))
         };
         Ok(())
     }
 
-    fn on_node(&self, node_id: &NodeId, _parameters: &mut [f32; 6], data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) -> Result<(), Box<dyn Error>> {
+    fn on_node(&self, node_id: &NodeId, _parameters: &mut [f32; 6], data: &mut Box<dyn Accumulator>) -> Result<(), Box<dyn Error>> {
 
-        let pad = if data.check_is_empty() { "" } else { " " };
         let node_data = self.tree.get(node_id)?.data();
-        data.push_item(Box::new(format!("{}{}{}", pad.to_string(), OPEN_BRACKET.to_string(), node_data)));
+        data.push_item(&format!("{}{}", OPEN_BRACKET.to_string(), node_data));
         Ok(())
     }
 
-    fn on_child(&self, _child_node_id: &NodeId, _parameters: &mut [f32; 6], _data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) {}
+    fn on_child(&self, _child_node_id: &NodeId, _parameters: &mut [f32; 6], _data: &mut Box<dyn Accumulator>) {}
 
-    fn finish_recursion(&self, data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) {
-        data.push_item(Box::new(format!("{}", CLOSE_BRACKETS.to_string())));
+    fn finish_recursion(&self, data: &mut Box<dyn Accumulator>) {
+        data.push_item(&format!("{}", CLOSE_BRACKETS.to_string()));
     }
 
 

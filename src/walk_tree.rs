@@ -8,14 +8,18 @@ use crate::tree_2_plot::TreePlotData;
 pub trait Accumulateable {
     fn as_any(&self) -> &dyn Any;
     fn as_base(&self) -> &dyn Accumulateable;
+    fn clone_box<'a>(&'a self) -> Box<dyn Accumulateable + 'a>;
 }
 
-impl Accumulateable for TreePlotData {
+impl Accumulateable for TreePlotData{
     fn as_any(&self) -> &dyn Any {
         self
     }
     fn as_base(&self) -> &dyn Accumulateable {
         self as &dyn Accumulateable
+    }
+    fn clone_box<'a>(&'a self) -> Box<dyn Accumulateable + 'a> {
+        Box::new(self.clone())
     }
 }
 
@@ -26,60 +30,57 @@ impl Accumulateable for String {
     fn as_base(&self) -> &dyn Accumulateable {
         self as &dyn Accumulateable
     }
+    fn clone_box<'a>(&'a self) -> Box<dyn Accumulateable + 'a> {
+        Box::new(self.clone())
+    }
 }
 pub trait Accumulator {
-    type Item;
-    fn push_item(&mut self, item: Self::Item);
+    fn push_item(&mut self, item: &dyn Accumulateable);
     fn check_is_empty(&self) -> bool;
-    fn peak_last(&self) -> Result<&Self::Item, Box<dyn Error>>;
-    fn as_base(&self) -> &dyn Accumulator<Item=dyn Accumulateable>;
+    fn peak_last(&self) -> Result<&dyn Accumulateable, Box<dyn Error>>;
+    fn as_base(&self) -> &dyn Accumulator;
+    fn clone_box<'a>(&'a self) -> Box<dyn Accumulator +'a>;
+    fn as_any(&self) -> &dyn Any;
 }
 
-impl Accumulator for String {
-    type Item = String;
-    fn push_item(&mut self, item: Self::Item){
-        *self += &item;
-    }
-    fn check_is_empty(&self) -> bool {
-        return self.is_empty()
-    }
-    fn peak_last(&self) -> Result<&String, Box<dyn Error>> {
-        return Err(format!("peak last not implemented for str").into())
-    }
-}
-
-impl Accumulator for Vec<TreePlotData> {
-    type Item = TreePlotData;
-    fn push_item(&mut self, item: Self::Item){
+impl Accumulator for Vec<&dyn Accumulateable> {
+    fn push_item(&mut self, item: &dyn Accumulateable) {
         self.push(item);
     }
     fn check_is_empty(&self) -> bool {
         return self.is_empty()
     }
-    fn peak_last(&self) -> Result<&TreePlotData, Box<dyn Error>> {
-        let last = self.last().ok_or(format!("Vec<TreePlotData> is empty, probabaly with Non-empty node input").into());
-        last
+    fn peak_last(&self) -> Result<&dyn Accumulateable, Box<dyn Error>> {
+        let last = self.last().expect(&format!("Vec<Accumulateable> is empty, probabaly with Non-empty node input"));
+        Ok(last.as_base())
     }
-    fn as_base(&self) -> &dyn Accumulator<Item=&dyn Accumulateable> {
-        //let a = self as &dyn Accumulator<Item=&dyn Accumulateable>;
-        let x = self.iter().map(|x| x.as_base()).collect::<Vec<&dyn Accumulateable>>();
-        //let z = <x as Accumulator>::Item = &dyn Accumulateable;
-        //let y = &x as &dyn Accumulator::Item=&dyn Accumulateable;
-        //let y = &x as &dyn Accumulator::Item=<&dyn Accumulateable>;
-        let y = &x as &dyn Accumulator<Item = &dyn Accumulateable>;
-        //let x = self.iter().for_each(|x| {x.as_base();});
-        y
+    fn as_base(&self) -> &dyn Accumulator {
+        
+        self as &dyn Accumulator
+        //let x = self
+        //.iter()
+        //.map(|x| x.as_base())
+        //.collect::<Vec<&dyn Accumulateable>>();
+        
+        //&x as &dyn Accumulator
     }
+    fn clone_box<'a>(&'a self) -> Box<dyn Accumulator +'a> {
+        Box::new(self.clone())
+    }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
 }
 
 pub trait WalkActions {
 
     // initialize the walk for an empty intial node, returns the root node_id
-    fn init_walk(&self, root_node_id: &NodeId, data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>);
-    fn finish_trajectory(&self, node_id: &NodeId, data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) -> Result<(), Box<dyn Error>>;
-    fn on_node(&self, node_id: &NodeId, parameters: &mut [f32; 6], data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) -> Result<(), Box<dyn Error>>;
-    fn on_child(&self, child_node_id: &NodeId, parameters: &mut [f32; 6], data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>);
-    fn finish_recursion(&self, data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>);
+    fn init_walk(&self, root_node_id: &NodeId, data: &mut Box<dyn Accumulator>);
+    fn finish_trajectory(&self, node_id: &NodeId, data: &mut Box<dyn Accumulator>) -> Result<(), Box<dyn Error>>;
+    fn on_node(&self, node_id: &NodeId, parameters: &mut [f32; 6], data: &mut Box<dyn Accumulator>) -> Result<(), Box<dyn Error>>;
+    fn on_child(&self, child_node_id: &NodeId, parameters: &mut [f32; 6], data: &mut Box<dyn Accumulator>);
+    fn finish_recursion(&self, data: &mut Box<dyn Accumulator>);
 }
 
 pub struct WalkTree {
@@ -93,7 +94,7 @@ impl WalkTree {
     }
 
 
-    pub fn walk(&self, item: Option<&NodeId>, actions: &impl WalkActions, data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) -> Result<(), Box<dyn Error>> {
+    pub fn walk(&self, item: Option<&NodeId>, actions: &impl WalkActions, data: &mut Box<dyn Accumulator>) -> Result<(), Box<dyn Error>> {
 
         // walk in DFS
 
