@@ -10,7 +10,6 @@ use crate::{walk_tree::{WalkActions, Accumulator}};
 
 const CLOSE_BRACKETS: char = ')';
 const OPEN_BRACKET: &str = "(";
-const SPACE: &str = " ";
 
  pub struct Tree2String {
     tree: Tree<String>,
@@ -19,30 +18,38 @@ const SPACE: &str = " ";
 
 impl WalkActions for Tree2String {
 
-    fn init_walk(&self, _root_node_id: &NodeId, _data: &mut Box<dyn Accumulator>) {}
+    fn init_walk(&self, _root_node_id: &NodeId, _data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
+        Ok(())
+    }
 
-    fn finish_trajectory(&self, node_id: &NodeId, data: &mut Box<dyn Accumulator>) -> Result<(), Box<dyn Error>> {
+    fn finish_trajectory(&self, node_id: &NodeId, data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
 
-        // if the tree is a double leaf tree (constituency) then 
+        // if the tree is a double leaf tree (constituency) then
+        let data_vec = <&mut Vec<String>>::try_from(data)?; 
         let node_data = self.tree.get(node_id)?.data();
         match self.doube_leaf {
-            true => data.push_item(&format!("{}", node_data)),
-            false => data.push_item(&format!("{}{}{}", OPEN_BRACKET.to_string(), node_data, CLOSE_BRACKETS.to_string()))
+            true => data_vec.push(format!("{}", node_data)),
+            false => data_vec.push(format!("{}{}{}", OPEN_BRACKET.to_string(), node_data, CLOSE_BRACKETS.to_string()))
         };
         Ok(())
     }
 
-    fn on_node(&self, node_id: &NodeId, _parameters: &mut [f32; 6], data: &mut Box<dyn Accumulator>) -> Result<(), Box<dyn Error>> {
+    fn on_node(&self, node_id: &NodeId, _parameters: &mut [f32; 6], data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
 
         let node_data = self.tree.get(node_id)?.data();
-        data.push_item(&format!("{}{}", OPEN_BRACKET.to_string(), node_data));
+        let data_vec = <&mut Vec<String>>::try_from(data)?;
+        data_vec.push(format!("{}{}", OPEN_BRACKET.to_string(), node_data));
         Ok(())
     }
 
-    fn on_child(&self, _child_node_id: &NodeId, _parameters: &mut [f32; 6], _data: &mut Box<dyn Accumulator>) {}
+    fn on_child(&self, _child_node_id: &NodeId, _parameters: &mut [f32; 6], _data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
+        Ok(())
+    }
 
-    fn finish_recursion(&self, data: &mut Box<dyn Accumulator>) {
-        data.push_item(&format!("{}", CLOSE_BRACKETS.to_string()));
+    fn finish_recursion(&self, data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
+        let data_vec = <&mut Vec<String>>::try_from(data)?;
+        data_vec.push(format!("{}", CLOSE_BRACKETS.to_string()));
+        Ok(())
     }
 
 
@@ -69,6 +76,7 @@ mod tests {
     use crate::string_2_tree::String2Tree;
     use crate::String2StructureBuilder;
     use crate::tree_2_string::Tree2String;
+    use crate::walk_tree::{Accumulator, WalkTree};
 
     #[test]
     fn double_leaf() {
@@ -99,13 +107,20 @@ mod tests {
         let tree = string2tree.get_structure();
 
         // backward
-        let mut prediction = String::from("");
-        let tree2string = Tree2String::new(tree, double_leaf);
-        if let Err(e) = tree2string.walk(None, &mut prediction) {
+        let tree2string = Tree2String::new(tree.clone(), double_leaf);
+
+        let walk_tree = WalkTree::new(tree);
+        let mut accumulator = Accumulator::T2S(Vec::<String>::new());
+        
+        if let Err(e) = walk_tree.walk(None, &tree2string, &mut accumulator) {
             panic!("{}", e);
         };
 
+        let string_vec = <&mut Vec<String>>::try_from(&mut accumulator).unwrap();
+        let prediction = string_vec.join(" ");
+
         prediction
+        
     }
 
 }

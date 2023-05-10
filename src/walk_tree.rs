@@ -2,85 +2,43 @@
 
 use std::error::Error;
 use id_tree::{Tree, NodeId};
-use std::any::Any;
 use crate::tree_2_plot::TreePlotData;
 
-pub trait Accumulateable {
-    fn as_any(&self) -> &dyn Any;
-    fn as_base(&self) -> &dyn Accumulateable;
-    fn clone_box<'a>(&'a self) -> Box<dyn Accumulateable + 'a>;
+#[derive(Debug)]
+pub enum Accumulator {
+    TPD(Vec<TreePlotData>),
+    T2S(Vec<String>)
 }
 
-impl Accumulateable for TreePlotData{
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn as_base(&self) -> &dyn Accumulateable {
-        self as &dyn Accumulateable
-    }
-    fn clone_box<'a>(&'a self) -> Box<dyn Accumulateable + 'a> {
-        Box::new(self.clone())
+impl<'a> TryFrom<&'a mut Accumulator> for &'a mut Vec<TreePlotData> {
+    type Error = Box<dyn Error>;
+    fn try_from(value: &'a mut Accumulator) -> Result<Self, Self::Error> {
+        match value {
+            Accumulator::TPD(x) => Ok(x),
+            _ => Err(format!("could not convert to {:?} from {:?}", std::any::type_name::<Vec<TreePlotData>>(), value).into())
+        }
     }
 }
 
-impl Accumulateable for String {
-    fn as_any(&self) -> &dyn Any {
-        self
+impl<'a> TryFrom<&'a mut Accumulator> for &'a mut Vec<String> {
+    type Error = Box<dyn Error>;
+    fn try_from(value: &'a mut Accumulator) -> Result<Self, Self::Error> {
+        match value {
+            Accumulator::T2S(x) => Ok(x),
+            _ => Err(format!("could not convert to {:?} from {:?}", std::any::type_name::<Vec<String>>(), value).into())
+        }
     }
-    fn as_base(&self) -> &dyn Accumulateable {
-        self as &dyn Accumulateable
-    }
-    fn clone_box<'a>(&'a self) -> Box<dyn Accumulateable + 'a> {
-        Box::new(self.clone())
-    }
-}
-pub trait Accumulator {
-    fn push_item(&mut self, item: &dyn Accumulateable);
-    fn check_is_empty(&self) -> bool;
-    fn peak_last(&self) -> Result<&dyn Accumulateable, Box<dyn Error>>;
-    fn as_base(&self) -> &dyn Accumulator;
-    fn clone_box<'a>(&'a self) -> Box<dyn Accumulator +'a>;
-    fn as_any(&self) -> &dyn Any;
-}
-
-impl Accumulator for Vec<&dyn Accumulateable> {
-    fn push_item(&mut self, item: &dyn Accumulateable) {
-        self.push(item);
-    }
-    fn check_is_empty(&self) -> bool {
-        return self.is_empty()
-    }
-    fn peak_last(&self) -> Result<&dyn Accumulateable, Box<dyn Error>> {
-        let last = self.last().expect(&format!("Vec<Accumulateable> is empty, probabaly with Non-empty node input"));
-        Ok(last.as_base())
-    }
-    fn as_base(&self) -> &dyn Accumulator {
-        
-        self as &dyn Accumulator
-        //let x = self
-        //.iter()
-        //.map(|x| x.as_base())
-        //.collect::<Vec<&dyn Accumulateable>>();
-        
-        //&x as &dyn Accumulator
-    }
-    fn clone_box<'a>(&'a self) -> Box<dyn Accumulator +'a> {
-        Box::new(self.clone())
-    }
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
 }
 
 pub trait WalkActions {
 
     // initialize the walk for an empty intial node, returns the root node_id
-    fn init_walk(&self, root_node_id: &NodeId, data: &mut Box<dyn Accumulator>);
-    fn finish_trajectory(&self, node_id: &NodeId, data: &mut Box<dyn Accumulator>) -> Result<(), Box<dyn Error>>;
-    fn on_node(&self, node_id: &NodeId, parameters: &mut [f32; 6], data: &mut Box<dyn Accumulator>) -> Result<(), Box<dyn Error>>;
-    fn on_child(&self, child_node_id: &NodeId, parameters: &mut [f32; 6], data: &mut Box<dyn Accumulator>);
-    fn finish_recursion(&self, data: &mut Box<dyn Accumulator>);
+    fn init_walk(&self, root_node_id: &NodeId, data: &mut Accumulator) -> Result<(), Box<dyn Error>>;
+    fn finish_trajectory(&self, node_id: &NodeId, data: &mut Accumulator) -> Result<(), Box<dyn Error>>;
+    fn on_node(&self, node_id: &NodeId, parameters: &mut [f32; 6], data: &mut Accumulator) -> Result<(), Box<dyn Error>>;
+    fn on_child(&self, child_node_id: &NodeId, parameters: &mut [f32; 6], data: &mut Accumulator) -> Result<(), Box<dyn Error>>;
+    fn finish_recursion(&self, data: &mut Accumulator) -> Result<(), Box<dyn Error>>;
+
 }
 
 pub struct WalkTree {
@@ -89,19 +47,22 @@ pub struct WalkTree {
 
 impl WalkTree {
 
+    // maybe should be initialized with a reference to Structure2PlotBuilder, for example tree_2_plot
+    // alternitably, Structure2PlotBuilder should be initialized with WalkTree. 
+    // Those are the two options
     pub fn new(tree: Tree<String>) -> Self {
         Self { tree: tree }
     }
 
 
-    pub fn walk(&self, item: Option<&NodeId>, actions: &impl WalkActions, data: &mut Box<dyn Accumulator>) -> Result<(), Box<dyn Error>> {
+    pub fn walk(&self, item: Option<&NodeId>, actions: &impl WalkActions, data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
 
         // walk in DFS
 
         // handle first iteration, extraction of the root
         if item.is_none() {
             let root_node_id: &NodeId = self.tree.root_node_id().ok_or("input tree is empty")?;
-            actions.init_walk(root_node_id, data);
+            actions.init_walk(root_node_id, data)?;
             self.walk(Some(root_node_id), actions, data)?;
             return Ok(());
         }
@@ -126,14 +87,14 @@ impl WalkTree {
             //
             // action on child_node
             //
-            actions.on_child(child_node_id, &mut parameters, data);
+            actions.on_child(child_node_id, &mut parameters, data)?;
             self.walk(Some(child_node_id), actions, data)?;
         }
 
         //
         // action on end recursion
         //
-        actions.finish_recursion(data);
+        actions.finish_recursion(data)?;
         Ok(())
         
     }

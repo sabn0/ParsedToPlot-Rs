@@ -7,9 +7,10 @@ use id_tree::*;
 use plotters::{prelude::*, style::text_anchor::*};
 use std::collections::HashMap;
 use std::error::Error;
+use std::ops::Deref;
 use crate::generic_traits::generic_traits::{Structure2PlotBuilder, Structure2PlotPlotter};
 use crate::sub_tree_children::sub_tree_children::SubChildren;
-use crate::walk_tree::{WalkActions, Accumulator, Accumulateable, WalkTree};
+use crate::walk_tree::{WalkActions, Accumulator, WalkTree};
 
 const DIM_CONST: usize = 640;
 const FONT_CONST: f32 = 0.0267;
@@ -19,7 +20,7 @@ const INIT_RIGHT_BOUND: f32 = 5.0;
 const Y_AX_LABEL: &str = "Depth";
 
 /// A struct that wraps the needed fileds to plot a node
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TreePlotData {
     positional_args: [f32; 6],  // save x1 y1 x2 y2 left_bound right_bound
     label_arg: String,           // save label
@@ -61,21 +62,10 @@ impl Structure2PlotBuilder<Tree<String>> for Tree2Plot {
 
     fn build<'a>(&mut self, save_to: &str) -> Result<(), Box<dyn Error>> {
         
-        let walk_tree = WalkTree::new(self.tree.clone());
-        
         // run the recursive extraction
-        //let a: &dyn Accumulator<Item = &dyn Accumulateable> = Vec::<TreePlotData>::new();
-        //let a: Box<dyn Accumulator<Item = &dyn Accumulateable>> = Box::new(Vec::<TreePlotData>::new());
-        let plot_data_vec = Vec::<TreePlotData>::new();
-        let accumulator = plot_data_vec
-        .iter()
-        .map(|x| x.as_base());
-        let d = accumulator.collect::<Vec<&dyn Accumulateable>>();
-        let b = d.as_base();
-        let mut aa: Box<dyn Accumulator> = b.clone_box();
-        
-        
-        walk_tree.walk(None, self, &mut aa);
+        let walk_tree = WalkTree::new(self.tree.clone());
+        let mut accumulator = Accumulator::TPD(Vec::<TreePlotData>::new());
+        walk_tree.walk(None, self, &mut accumulator)?;
 
         // calculate dimensions of plot based on tree height and number of leaf-children in sub tree
         let tree_height = self.tree.height();
@@ -112,8 +102,8 @@ impl Structure2PlotBuilder<Tree<String>> for Tree2Plot {
         .draw()
         .unwrap();
 
-        let ccc = aa.as_any().downcast_ref::<Vec<TreePlotData>>().unwrap().to_owned();
-        self.plot(&mut chart, ccc, font_style)?;
+        let plot_data_vec = <&mut Vec<TreePlotData>>::try_from(&mut accumulator)?;
+        self.plot(&mut chart, plot_data_vec.deref().to_vec(), font_style)?;
         Ok(())
 
     }
@@ -164,7 +154,7 @@ impl Structure2PlotPlotter<TreePlotData> for Tree2Plot {
 
 impl WalkActions for Tree2Plot {
 
-    fn init_walk(&self, root_node_id: &NodeId, data: &mut Box<dyn Accumulator>) 
+    fn init_walk(&self, root_node_id: &NodeId, data: &mut Accumulator) -> Result<(), Box<dyn Error>> 
     {
         // get root node label and send with initial positional args to plot
         // bounds are set to -+ 5 but this is arbitrary and not shown on x axis.
@@ -175,16 +165,19 @@ impl WalkActions for Tree2Plot {
             label_arg: root_node_data.to_owned()
         };
 
-        data.push_item(&root_plot_args);
+        let data_vec = <&mut Vec<TreePlotData>>::try_from(data)?;
+        data_vec.push(root_plot_args);
+        Ok(())
     }
 
-    fn finish_trajectory(&self, _node_id: &NodeId, _data: &mut Box<dyn Accumulator>) -> Result<(), Box<dyn Error>> {
+    fn finish_trajectory(&self, _node_id: &NodeId, _data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
         Ok(())
      }
 
-     fn on_node(&self, node_id: &NodeId, parameters: &mut [f32; 6], data: &mut Box<dyn Accumulator>) -> Result<(), Box<dyn Error>> {
+     fn on_node(&self, node_id: &NodeId, parameters: &mut [f32; 6], data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
 
-        let walk_args = data.peak_last()?.as_any().downcast_ref::<TreePlotData>().unwrap();
+        let data_vec = <&mut Vec<TreePlotData>>::try_from(data)?;
+        let walk_args = data_vec.last().ok_or("empty vec, probably on non empty node")?;
         let [x2, y2, left_bound, right_bound]: [f32; 4] = walk_args.positional_args[2..].try_into().unwrap();
         parameters[0] = x2;
         parameters[1] = y2;
@@ -206,7 +199,7 @@ impl WalkActions for Tree2Plot {
         Ok(())
     }
 
-    fn on_child(&self, child_node_id: &NodeId, parameters: &mut [f32; 6], data: &mut Box<dyn Accumulator>) {
+    fn on_child(&self, child_node_id: &NodeId, parameters: &mut [f32; 6], data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
 
         let x2 = parameters[0];
         let y2 = parameters[1];
@@ -237,12 +230,15 @@ impl WalkActions for Tree2Plot {
             label_arg: label
         };
         
-        data.push_item(&child_walk_args);
-
+        let data_vec = <&mut Vec<TreePlotData>>::try_from(data)?;
+        data_vec.push(child_walk_args);
+        Ok(())
 
     }
 
-    fn finish_recursion(&self, _data: &mut Box<dyn Accumulator>) {}
+    fn finish_recursion(&self, _data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
+        Ok(())
+    }
 
 
 }
