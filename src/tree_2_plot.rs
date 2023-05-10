@@ -60,12 +60,13 @@ impl Structure2PlotBuilder<Tree<String>> for Tree2Plot {
         }
     }
 
-    fn build<'a>(&mut self, save_to: &str) -> Result<(), Box<dyn Error>> {
+
+
+    fn build(&mut self, save_to: &str) -> Result<(), Box<dyn Error>> {
         
         // run the recursive extraction
-        let walk_tree = WalkTree::new(self.tree.clone());
         let mut accumulator = Accumulator::TPD(Vec::<TreePlotData>::new());
-        walk_tree.walk(None, self, &mut accumulator)?;
+        self.walk(None, &mut accumulator)?;
 
         // calculate dimensions of plot based on tree height and number of leaf-children in sub tree
         let tree_height = self.tree.height();
@@ -148,6 +149,14 @@ impl Structure2PlotPlotter<TreePlotData> for Tree2Plot {
         }
 
         Ok(())
+    }
+
+}
+
+impl WalkTree for Tree2Plot {
+
+    fn get_tree(&self) -> &Tree<String> {
+        return &self.tree
     }
 
 }
@@ -240,11 +249,5 @@ impl WalkActions for Tree2Plot {
         Ok(())
     }
 
-
-}
-
-impl Tree2Plot {
-
-    // Tree2Plot now has WalkActions, so it does not need to have an explicit walk
 
 }

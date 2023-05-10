@@ -25,6 +25,7 @@ pub mod generic_traits {
 
     /// A trait that contains the needed functionallity to build a structure-to-plot process.
     pub trait Structure2PlotBuilder<V> {
+
         fn new(structure: V) -> Self;
         fn build(&mut self, save_to: &str) -> Result<(), Box<dyn Error>>;
     }
