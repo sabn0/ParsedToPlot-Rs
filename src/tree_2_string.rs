@@ -32,7 +32,7 @@ impl WalkActions for Tree2String {
         Ok(())
     }
 
-    fn on_node(&self, node_id: &NodeId, data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) -> Result<(), Box<dyn Error>> {
+    fn on_node(&self, node_id: &NodeId, _parameters: &mut [f32; 6], data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) -> Result<(), Box<dyn Error>> {
 
         let pad = if data.check_is_empty() { "" } else { " " };
         let node_data = self.tree.get(node_id)?.data();
@@ -40,12 +40,10 @@ impl WalkActions for Tree2String {
         Ok(())
     }
 
-    fn on_child() {
-        todo!()
-    }
+    fn on_child(&self, _child_node_id: &NodeId, _parameters: &mut [f32; 6], _data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) {}
 
-    fn finish_recursion() {
-        todo!()
+    fn finish_recursion(&self, data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) {
+        data.push_item(Box::new(format!("{}", CLOSE_BRACKETS.to_string())));
     }
 
 
@@ -62,51 +60,7 @@ impl Tree2String {
         }
     }
 
-    fn walk(&self, item: Option<&NodeId>, constituency: &mut String) -> Result<(), Box<dyn Error>> {
-
-        if item.is_none() {
-
-            // handle first iteration over tree
-            let root_node_id: &NodeId = self.tree.root_node_id().ok_or("input tree is empty")?;
-            
-            self.walk(Some(root_node_id), constituency)?;
-            
-            return Ok(());
-        }
-
-        // first print the data of this node
-        let node_id = item.unwrap();
-        let children_ids: Vec<&NodeId> = self.tree.children_ids(node_id)?.collect();
-
-        // if got here, handle the case of a leaf
-        if children_ids.is_empty() {
-            let node_data = self.tree.get(node_id)?.data();
-            match self.doube_leaf {
-                true => *constituency += &format!("{}{}", SPACE.to_string(), node_data),
-                false => *constituency += &format!("{}{}{}{}", SPACE.to_string(), OPEN_BRACKET.to_string(), node_data, CLOSE_BRACKETS.to_string())
-            };
-
-            return Ok(());
-        }
-        
-        // not padding the root with left side space
-        let pad = if constituency.is_empty() { "" } else { " " };
-        let node_data = self.tree.get(node_id)?.data();
-        *constituency += &format!("{}{}{}", pad.to_string(), OPEN_BRACKET.to_string(), node_data);
-        
-        // do DFS for the children of the current node_id, that has at least one child
-        for child_id in children_ids {
-            self.walk(Some(child_id), constituency)?;
-        }
-
-        // here a node case is continuing its recursive calling, 
-        // so we need to pad with another bracket that signals
-        // the end of the sub tree 
-        *constituency += &format!("{}", CLOSE_BRACKETS.to_string());
-        Ok(())
-        
-    }
-
+    // Tree2String now has WalkActions, so it does not need to have an explicit walk
 }
 
 

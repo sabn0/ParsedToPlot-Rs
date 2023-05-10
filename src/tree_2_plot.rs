@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use crate::generic_traits::generic_traits::{Structure2PlotBuilder, Structure2PlotPlotter};
 use crate::sub_tree_children::sub_tree_children::SubChildren;
-use crate::walk_tree::{WalkActions, Accumulator, Accumulateable};
+use crate::walk_tree::{WalkActions, Accumulator, Accumulateable, WalkTree};
 
 const DIM_CONST: usize = 640;
 const FONT_CONST: f32 = 0.0267;
@@ -62,8 +62,17 @@ impl Structure2PlotBuilder<Tree<String>> for Tree2Plot {
     fn build(&mut self, save_to: &str) -> Result<(), Box<dyn Error>> {
         
         // run the recursive extraction
-        let mut plot_data_vec: Vec<TreePlotData> = Vec::new();
-        self.walk(None, &mut plot_data_vec)?;
+        //let a: &dyn Accumulator<Item = &dyn Accumulateable> = Vec::<TreePlotData>::new();
+        //let a: Box<dyn Accumulator<Item = &dyn Accumulateable>> = Box::new(Vec::<TreePlotData>::new());
+        let a: Box<dyn Accumulator<Item = Box<dyn Accumulateable>>> = Box::new(Vec::<TreePlotData>::new());
+        
+        let mut my_vec: Vec<TreePlotData> = Vec::new();
+        let mut bar: Box<Vec<TreePlotData>> = Box::new(my_vec);
+
+        //let mut b: Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>;
+        let walk_tree = WalkTree::new(self.tree);
+        walk_tree.walk(None, self, &mut bar);
+        //self.walk(None, &mut plot_data_vec)?;
 
         // calculate dimensions of plot based on tree height and number of leaf-children in sub tree
         let tree_height = self.tree.height();
@@ -169,10 +178,14 @@ impl WalkActions for Tree2Plot {
         Ok(())
      }
 
-     fn on_node(&self, node_id: &NodeId, data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) -> Result<(), Box<dyn Error>> {
+     fn on_node(&self, node_id: &NodeId, parameters: &mut [f32; 6], data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) -> Result<(), Box<dyn Error>> {
 
         let walk_args = data.peak_last()?.as_any().downcast_ref::<TreePlotData>().unwrap();
         let [x2, y2, left_bound, right_bound]: [f32; 4] = walk_args.positional_args[2..].try_into().unwrap();
+        parameters[0] = x2;
+        parameters[1] = y2;
+        parameters[2] = left_bound;
+        parameters[3] = right_bound;
 
         // for positional computation, get the total number of sub_children that are leaves for this node
         // every child of the node will be positioned by the proportion of its sub_tree compared to the 
@@ -180,94 +193,58 @@ impl WalkActions for Tree2Plot {
         let n_leaves = *self.node_id2n_sub_children
         .get(node_id)
         .ok_or("didn't find node id in mapping to sub children")? as f32;
+        parameters[4] = n_leaves;
 
         // iterate over children, save plotting data for each child recursivly
-        let mut space_allocated: f32 = 0.0;
+        let space_allocated: f32 = 0.0;
+        parameters[5] = space_allocated;
+
         Ok(())
     }
 
-    fn on_child() {
-        todo!()
+    fn on_child(&self, child_node_id: &NodeId, parameters: &mut [f32; 6], data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) {
+
+        let x2 = parameters[0];
+        let y2 = parameters[1];
+        let left_bound = parameters[2];
+        let right_bound = parameters[3];
+        let n_leaves = parameters[4];
+        let space_allocated = &mut parameters[5];
+
+        // get label for this child;
+        let label = self.tree.get(child_node_id).unwrap().data().to_owned();
+
+        // calculate positional args for this child
+        // for positional computation, get the total number of sub_children that are leaves for this node
+
+        let c_leaves = *self.node_id2n_sub_children.get(child_node_id)
+        .expect("didn't find node id in mapping to sub children") as f32;
+        
+        let allocation: f32 = (right_bound - left_bound) * (c_leaves / n_leaves);
+        let new_left_bound = left_bound + *space_allocated;
+        let new_right_bound = left_bound + *space_allocated + allocation;
+        let new_x2: f32 = (new_left_bound + new_right_bound) / 2 as f32;
+        let new_y2: f32 = y2 + 1 as f32;
+        *space_allocated += allocation;
+
+        // create plot data for this child
+        let child_walk_args = TreePlotData {
+            positional_args: [x2, y2, new_x2, new_y2, new_left_bound, new_right_bound],
+            label_arg: label
+        };
+        
+        data.push_item(Box::new(child_walk_args));
+
+
     }
 
-    fn finish_recursion() {
-        todo!()
-    }
+    fn finish_recursion(&self, _data: &mut Box<dyn Accumulator<Item=Box<dyn Accumulateable>>>) {}
 
 
 }
 
 impl Tree2Plot {
 
-
-    fn walk(&self, item: Option<&NodeId>, plot_data_vec: &mut Vec<TreePlotData>) -> Result<(), Box<dyn Error>>{
-        
-        if item.is_none() {
-            let root_node_id: &NodeId = self.tree.root_node_id().ok_or("input tree is empty")?;
-            //
-            self.walk(Some(root_node_id), plot_data_vec)?;
-            return Ok(())
-        }
-
-        // normal node extraction
-        
-        // get node's children, if no children finish
-        let node_id = item.unwrap();
-        let children_ids: Vec<&NodeId> = self.tree.children_ids(node_id)?.collect();
-
-        // stopping condition of route
-        if children_ids.is_empty() {
-            return Ok(())
-        }
-
-        // extract positional args
-        let walk_args = plot_data_vec.last().ok_or("None walk args with Some item")?;
-        let [x2, y2, left_bound, right_bound]: [f32; 4] = walk_args.positional_args[2..].try_into().unwrap();
-
-        // for positional computation, get the total number of sub_children that are leaves for this node
-        // every child of the node will be positioned by the proportion of its sub_tree compared to the 
-        // total number of leaves in this sub tree.
-        let n_leaves = *self.node_id2n_sub_children
-        .get(node_id)
-        .ok_or("didn't find node id in mapping to sub children")? as f32;
-
-        // iterate over children, save plotting data for each child recursivly
-        let mut space_allocated: f32 = 0.0;
-        //
-
-
-        for child_node_id in children_ids {
-            
-            // get label for this child;
-            let label = self.tree.get(child_node_id).unwrap().data().to_owned();
-
-            // calculate positional args for this child
-            // for positional computation, get the total number of sub_children that are leaves for this node
-
-            let c_leaves = *self.node_id2n_sub_children.get(child_node_id)
-            .expect("didn't find node id in mapping to sub children") as f32;
-            
-            let allocation: f32 = (right_bound - left_bound) * (c_leaves / n_leaves);
-            let new_left_bound = left_bound + space_allocated;
-            let new_right_bound = left_bound + space_allocated + allocation;
-            let new_x2: f32 = (new_left_bound + new_right_bound) / 2 as f32;
-            let new_y2: f32 = y2 + 1 as f32;
-            space_allocated += allocation;
-
-            // create plot data for this child
-            let child_walk_args = TreePlotData {
-                positional_args: [x2, y2, new_x2, new_y2, new_left_bound, new_right_bound],
-                label_arg: label
-            };
-            
-            plot_data_vec.push(child_walk_args.clone());
-
-            self.walk(Some(child_node_id), plot_data_vec)?;
-
-        }
-
-        Ok(())
-    }
-
+    // Tree2Plot now has WalkActions, so it does not need to have an explicit walk
 
 }
