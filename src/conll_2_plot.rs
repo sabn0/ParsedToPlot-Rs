@@ -25,6 +25,11 @@ pub struct ConllPlotData {
     height: f32
 }
 
+pub struct WalkData {
+    conll_plot_data: Vec<ConllPlotData>,
+    walk_args: Vec<[f32; 2]>
+}
+
 /// A struct that wraps the needed fileds to plot a conll
 pub struct Conll2Plot {
     tokens: Vec<Token>,
@@ -71,13 +76,14 @@ impl Structure2PlotBuilder<Vec<Token>> for Conll2Plot {
     fn build(&mut self, save_to: &str) -> Result<(), Box<dyn Error>> {
 
         // first run the forward part: extraction of the plotting data through recursion
-        let mut walk_args: Vec<[f32; 2]> = vec![[0.0, 0.0]; self.seq_length];
-        let mut plot_data_vec: Vec<ConllPlotData> = Vec::new();
-        self.walk(None, &mut walk_args, &mut plot_data_vec)?;
+        let walk_args: Vec<[f32; 2]> = vec![[0.0, 0.0]; self.seq_length];
+        let plot_data_vec: Vec<ConllPlotData> = Vec::new();
+        let mut walk_data: WalkData = WalkData { conll_plot_data: plot_data_vec, walk_args: walk_args };
+        self.walk(None, &mut walk_data)?;
 
         // determine general plot settings for the example
         let seq_length = self.seq_length as f32;
-        let built_height = self.y_shift + walk_args[0..seq_length as usize].concat().iter().map(|x| *x as usize).max().unwrap() as f32;
+        let built_height = self.y_shift + walk_data.walk_args[0..seq_length as usize].concat().iter().map(|x| *x as usize).max().unwrap() as f32;
         let total_units = 2*DIM_CONST / (seq_length + built_height) as u32;
         let width = total_units * seq_length as u32;
         let height = total_units * built_height as u32;
@@ -110,7 +116,7 @@ impl Structure2PlotBuilder<Vec<Token>> for Conll2Plot {
         .draw()
         .unwrap();
 
-        self.plot(&mut chart, plot_data_vec, font_style)?;
+        self.plot(&mut chart, walk_data.conll_plot_data, font_style)?;
         
         Ok(())
     }
@@ -170,8 +176,10 @@ impl Structure2PlotPlotter<ConllPlotData> for Conll2Plot {
 impl Conll2Plot {
 
 
-    fn walk(&self, item: Option<&Token>, walk_args: &mut Vec<[f32; 2]>, plot_data_vec: &mut Vec<ConllPlotData>) -> Result<(), Box<dyn Error>> {
+    fn walk(&self, item: Option<&Token>, walk_data: &mut WalkData) -> Result<(), Box<dyn Error>> {
         
+        // walk args and plot_data_vec are not the same , even not of the same length
+
         // get root of the sequence if not given
         if item.is_none() {
             let mut root_id: Option<f32> = None;
@@ -194,12 +202,9 @@ impl Conll2Plot {
             }
             
             let root_token = &self.tokens[root_id.unwrap() as usize];
-
-            self.walk(Some(root_token), walk_args, plot_data_vec)?;
-            
-            let this_plot_data = self.extract(root_token, walk_args);
-            plot_data_vec.push(this_plot_data);
-            
+            self.walk(Some(root_token), walk_data)?;
+            let this_plot_data = self.extract(root_token, walk_data);
+            walk_data.conll_plot_data.push(this_plot_data);
             return Ok(())
 
         }
@@ -220,7 +225,7 @@ impl Conll2Plot {
 
         }
 
-        // sort children by distance
+        // sort children by distance (ascending order)
         root_children_ids.sort_by(|x, y| x.1.cmp(&y.1));
 
         // send each child to recursion
@@ -228,18 +233,18 @@ impl Conll2Plot {
 
             let child_token = &self.tokens[child_id as usize];
             if !self.leaf_ids.contains(&child_id) {
-                self.walk(Some(child_token), walk_args, plot_data_vec)?;
+                self.walk(Some(child_token), walk_data)?;
             }
 
-            let this_plot_data = self.extract(child_token, walk_args);
-            plot_data_vec.push(this_plot_data);
+            let this_plot_data = self.extract(child_token, walk_data);
+            walk_data.conll_plot_data.push(this_plot_data);
         }
         Ok(())
 
     }
 
 
-    fn extract(&self, token: &Token, walk_args: &mut Vec<[f32; 2]>) -> ConllPlotData {
+    fn extract(&self, token: &Token, walk_data: &mut WalkData) -> ConllPlotData {
 
         let token_head = token.get_token_head();
         let token_id = token.get_token_id();
@@ -265,15 +270,15 @@ impl Conll2Plot {
             // extract height based on counts in the closed interval
             let mut potential_heights: Vec<f32> = Vec::new();
             if start <= end {
-                potential_heights = walk_args[start..=end].concat();
+                potential_heights = walk_data.walk_args[start..=end].concat();
             }
             
-            let mut bounds = vec![walk_args[token_id as usize][1-index], walk_args[token_head as usize][index]];
+            let mut bounds = vec![walk_data.walk_args[token_id as usize][1-index], walk_data.walk_args[token_head as usize][index]];
             potential_heights.append(&mut bounds);
             let height = 1.0 + potential_heights.iter().map(|x| *x as usize).max().unwrap() as f32;
 
-            walk_args[token_id as usize][1-index] = height;
-            walk_args[token_head as usize][index] = height;
+            walk_data.walk_args[token_id as usize][1-index] = height;
+            walk_data.walk_args[token_head as usize][index] = height;
 
             height
         };
