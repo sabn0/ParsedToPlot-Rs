@@ -1,11 +1,19 @@
 
+//
+// Under MIT license
+//
 
 use std::error::Error;
 use id_tree::{NodeId};
-use crate::{tree_2_plot::TreePlotData, conll_2_plot::WalkData, string_2_conll::Token};
+use super::tree_2_plot::TreePlotData;
+use super::conll_2_plot::WalkData;
+use super::string_2_conll::Token;
 
+// A dynamic enum that defines the type of structures that can accumulate data during a DFS TreeWalk
+// Data is used later for various build needs such as plotting, saving to string, etc.
+// Each type is adjusted to some implementation of Structure2PlotBuilder<T>
 #[derive(Debug)]
-pub enum Accumulator {
+pub(in crate) enum Accumulator {
     TPD(Vec<TreePlotData>), // for Tree2Plot
     T2S(String),            // for Tree2String
     WD(WalkData),           // for Conll2Plot
@@ -52,8 +60,9 @@ impl<'a> TryFrom<&'a mut Accumulator> for &'a mut Vec<String> {
     }
 }
 
+// A dynamic enum that defines the type of nodes of the structures that can be in a DFS TreeWalk
 #[derive(Debug, Clone, Copy)]
-pub enum Element<'a> {
+pub(in crate) enum Element<'a> {
     NID(&'a NodeId),
     TID(&'a Token),
 }
