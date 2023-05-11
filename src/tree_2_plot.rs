@@ -8,9 +8,10 @@ use plotters::{prelude::*, style::text_anchor::*};
 use std::collections::HashMap;
 use std::error::Error;
 use std::ops::Deref;
-use crate::generic_traits::generic_traits::{Structure2PlotBuilder, Structure2PlotPlotter};
+use crate::generic_traits::generic_traits::{Structure2PlotBuilder, Structure2PlotPlotter, WalkActions, WalkTree};
 use crate::sub_tree_children::sub_tree_children::SubChildren;
-use crate::walk_tree::{WalkActions, Accumulator, WalkTree, Element};
+use crate::generic_enums::{Accumulator, Element};
+
 
 const DIM_CONST: usize = 640;
 const FONT_CONST: f32 = 0.0267;

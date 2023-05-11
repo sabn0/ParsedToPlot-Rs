@@ -6,7 +6,8 @@
 use id_tree::*;
 use std::{error::Error};
 
-use crate::{walk_tree::{WalkActions, Accumulator, WalkTree, Element}, Structure2PlotBuilder};
+use crate::generic_enums::{Accumulator, Element};
+use crate::generic_traits::generic_traits::{WalkActions, WalkTree, Structure2PlotBuilder};
 
 const CLOSE_BRACKETS: &str = ")";
 const OPEN_BRACKET: &str = "(";
@@ -15,6 +16,31 @@ const OPEN_BRACKET: &str = "(";
     tree: Tree<String>,
     double_leaf: bool
 }
+
+
+impl Structure2PlotBuilder<Tree<String>> for Tree2String {
+
+    fn new(structure: Tree<String>) -> Self {
+
+        let root_data = structure.get(structure.root_node_id().unwrap()).unwrap().data();
+        let (is_double, _data) = root_data.split_once('-').unwrap();
+        let double_leaf = match is_double {
+            "1" => true,
+            "0" => false,
+            _ => panic!("incorrect bin for is double")
+        };
+
+        Self {
+            double_leaf: double_leaf,
+            tree: structure
+        }
+    }
+
+    fn build(&mut self, _save_to: &str) -> Result<(), Box<dyn Error>> {
+        Ok(())
+    }
+}
+
 
 impl WalkTree for Tree2String {
 
@@ -80,36 +106,14 @@ impl WalkActions for Tree2String {
 }
 
 
-impl Structure2PlotBuilder<Tree<String>> for Tree2String {
-
-    fn new(structure: Tree<String>) -> Self {
-
-        let root_data = structure.get(structure.root_node_id().unwrap()).unwrap().data();
-        let (is_double, _data) = root_data.split_once('-').unwrap();
-        let double_leaf = match is_double {
-            "1" => true,
-            "0" => false,
-            _ => panic!("incorrect bin for is double")
-        };
-
-        Self {
-            double_leaf: double_leaf,
-            tree: structure
-        }
-    }
-
-    fn build(&mut self, _save_to: &str) -> Result<(), Box<dyn Error>> {
-        todo!()
-    }
-}
-
 
 
 #[cfg(test)]
 mod tests {
 
     use crate::string_2_tree::String2Tree;
-    use crate::walk_tree::{WalkTree, Accumulator};
+    use crate::generic_enums::{Accumulator};
+    use crate::generic_traits::generic_traits::WalkTree;
     use crate::{String2StructureBuilder, Structure2PlotBuilder};
     use crate::tree_2_string::Tree2String;
 

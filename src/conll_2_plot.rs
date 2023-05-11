@@ -7,7 +7,8 @@ use std::error::Error;
 
 use super::string_2_conll::*;
 use plotters::{prelude::*, style::text_anchor::{Pos, HPos, VPos}};
-use crate::{generic_traits::generic_traits::{Structure2PlotBuilder, Structure2PlotPlotter}, walk_tree::{WalkTree, WalkActions, Element, Accumulator}};
+use crate::generic_enums::{Element, Accumulator};
+use crate::generic_traits::generic_traits::{Structure2PlotBuilder, Structure2PlotPlotter, WalkActions, WalkTree};
 
 const DIM_CONST: u32 = 640;
 const MARGIN: u32 = 15;
