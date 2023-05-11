@@ -11,6 +11,7 @@ const IMG_TYPE: &str = ".png";
 const DEPENDENCY: &str = "d";
 const CONSTITUENCY: &str = "c";
 
+/// Host all configuration process between io and the library, including interaction with files and commandline
 pub mod configure_structures {
 
     use std::error::Error;
@@ -67,8 +68,9 @@ pub mod configure_structures {
         }
     }
 
+    /// A trait that defines that behavior for saving files throughout the library.
+    /// Used automatically, not called by the user.
     pub(in crate) trait Saver {
-
         fn save_output(&self, out_path: &str) -> Result<(), Box<dyn Error>>;
     }
 
@@ -76,7 +78,7 @@ pub mod configure_structures {
 
         fn save_output(&self, out_path: &str) -> Result<(), Box<dyn Error>> {
             
-            // each string is a token, line with fields sep by \t
+            // each string is a token => line with fields sep by tab
             let mut out_vec = Vec::new();
             for vec in self {
                 let string_vec = vec.join("\n").to_owned();
@@ -86,6 +88,7 @@ pub mod configure_structures {
             Ok(())
         }
     }
+
     impl Saver for Vec<String> {
 
         fn save_output(&self, out_path: &str) -> Result<(), Box<dyn Error>> {
@@ -171,7 +174,7 @@ impl Config {
     }
 
     ///
-    /// Crate an output directory as requested if possible
+    /// A method to create an output directory as requested if possible
     /// 
     pub fn make_out_dir(out_dir: &String) -> Result<(), String> {
         match create_dir_all(out_dir) {
@@ -180,23 +183,22 @@ impl Config {
         }
     }
 
-
     ///
     /// The Config trait receives the command line array of inputs and parses it.
     /// Expects 3 arguments : Letter selector, input text file, Requested output path to save png images.
     /// Returns a Result over DataType.
     /// 
-    /// Examples are given in the lib.rs file
+    /// See lib.rs file for examples
     /// 
     pub fn new(args: &[String]) -> Result<DataType, Box<dyn Error>> {
 
         // validate number of arguments supplied
         if args.len() != ARGS_LENGTH {
-            let custom_err = format!("there should be {} arguments supllied: constituency file and output dir, found {} ", ARGS_LENGTH, args.len());
+            let custom_err = format!("there should be {} arguments supplied: constituency file and output dir, found {}", ARGS_LENGTH, args.len());
             return Err(custom_err.into());
         }
 
-        // load output directory path and try to create:
+        // load output directory path and try to create it
         Config::make_out_dir(&args[3])?;
 
         // load inputs
@@ -229,9 +231,8 @@ mod tests {
             output_path.to_string()
         ];
 
-        match additional {
-            Some(additional) => { args.push(additional.to_string()); }
-            None => {}
+        if let Some(additional) = additional {
+            args.push(additional.to_string());
         }
 
         let sequences = Config::new(&args);
@@ -239,57 +240,55 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
+    //#[ignore]
     fn constituency() {
 
         let sequences = config_test_template("c", "Input/constituencies.txt", "Output", None);
-        match sequences {
-            Ok(_sequences) => {},
-            Err(e) => panic!("{}", e)
+        if let Err(e) = sequences {
+            panic!("{}", e);
         }
-        let save_to = &Config::get_out_file("Output", "img".to_string().as_str());
+
+        let save_to = &Config::get_out_file("Output", "img");
         assert_eq!(save_to, "Output/img.png");
     }
 
     #[test]
-    #[ignore]
+    //#[ignore]
     fn dependency() {
 
         let sequences = config_test_template("d", "Input/conll.txt", "Output", None);
-        match sequences {
-            Ok(_sequences) => {},
-            Err(e) => panic!("{}", e)
+        if let Err(e) = sequences {
+            panic!("{}", e);
         }
-        let save_to = &Config::get_out_file("Output", "img".to_string().as_str());
+
+        let save_to = &Config::get_out_file("Output", "img");
         assert_eq!(save_to, "Output/img.png");
     }
 
     #[test]
-    #[ignore]
+    //#[ignore]
     #[should_panic(expected = "Resulted in error in parsing: input selector e is invalid")]
     fn invalid_selector() {
         
         let selector = "e";
         let sequences = config_test_template(selector, "Input/constituency.txt", "Output", None);
-        match sequences {
-            Ok(_sequences) => {},
-            Err(e) => panic!("{}", e)
+        if let Err(e) = sequences {
+            panic!("{}", e);
         }
+
         
     }
 
     #[test]
-    #[ignore]
-    #[should_panic(expected = "there should be 4 arguments supllied: constituency file and output dir, found 5")]
+    //#[ignore]
+    #[should_panic(expected = "there should be 4 arguments supplied: constituency file and output dir, found 5")]
     fn invalid_length() {
 
         let selector = "c";
         let sequences = config_test_template(selector, "Input/constituency.txt", "Output", Some("---"));
-        match sequences {
-            Ok(_sequences) => {},
-            Err(e) => panic!("{}", e)
+        if let Err(e) = sequences {
+            panic!("{}", e);
         }
-
     }
 
 }
