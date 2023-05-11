@@ -193,11 +193,12 @@
 mod config;
 mod string_2_conll;
 mod conll_2_plot;
+mod conll_2_string;
 mod string_2_tree;
 mod tree_2_plot;
+mod tree_2_string;
 mod generic_traits;
 mod sub_tree_children;
-mod tree_2_string;
 mod generic_enums;
 
 pub use config::Config;

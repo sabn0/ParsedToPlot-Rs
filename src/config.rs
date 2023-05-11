@@ -3,7 +3,8 @@
 // Under MIT license
 //
 
-use std::{fs::{self}, error::Error};
+use std::error::Error;
+use std::fs::create_dir_all;
 
 const ARGS_LENGTH: usize = 4;
 const IMG_TYPE: &str = ".png";
@@ -13,7 +14,7 @@ const CONSTITUENCY: &str = "c";
 pub mod configure_structures {
 
     use std::error::Error;
-    use std::fs::File;
+    use std::fs::{File, self};
     use std::io::{self, BufRead};
     use std::vec;
 
@@ -66,6 +67,34 @@ pub mod configure_structures {
         }
     }
 
+    pub(in crate) trait Saver {
+
+        fn save_output(&self, out_path: &str) -> Result<(), Box<dyn Error>>;
+    }
+
+    impl Saver for Vec<Vec<String>> {
+
+        fn save_output(&self, out_path: &str) -> Result<(), Box<dyn Error>> {
+            
+            // each string is a token, line with fields sep by \t
+            let mut out_vec = Vec::new();
+            for vec in self {
+                let string_vec = vec.join("\n").to_owned();
+                out_vec.push(string_vec);
+            }
+            out_vec.save_output(out_path)?;
+            Ok(())
+        }
+    }
+    impl Saver for Vec<String> {
+
+        fn save_output(&self, out_path: &str) -> Result<(), Box<dyn Error>> {
+
+            let out_string = self.join("\n");
+            fs::write(out_path, out_string).expect("Unable to write file");            
+            Ok(())
+        }
+    }
 
     /// A trait that supplies reading functionallity over input files.
     /// The trait is used from within the config implementation.
@@ -145,7 +174,7 @@ impl Config {
     /// Crate an output directory as requested if possible
     /// 
     pub fn make_out_dir(out_dir: &String) -> Result<(), String> {
-        match fs::create_dir_all(out_dir) {
+        match create_dir_all(out_dir) {
             Ok(()) => Ok(()),
             Err(e) => return Err(format!("create_dir_all error: {}", e.to_string()))
         }

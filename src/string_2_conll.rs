@@ -16,9 +16,14 @@ const CONLL_SIZE: usize = 10;
 pub struct Token {
     id: f32,
     form: String,
+    lemma: String,
     pos: String,
+    xpos: String,
+    feats: String,
     head: f32,
-    deprel: String
+    deprel: String,
+    deps: String,
+    misc: String
 }
 
 impl Token {
@@ -53,6 +58,36 @@ impl Token {
     pub fn get_token_deprel(&self) -> String {
         return self.deprel.clone()
     }
+    ///
+    /// A get method to retrive the lemma form of self (might be empty)
+    /// 
+    pub fn get_token_lemma(&self) -> String {
+        return self.lemma.clone()
+    }
+    ///
+    /// A get method to retrive the xpos form of self (might be empty)
+    /// 
+    pub fn get_token_xpos(&self) -> String {
+        return self.xpos.clone()
+    }
+    ///
+    /// A get method to retrive the feats form of self (might be empty)
+    /// 
+    pub fn get_token_feats(&self) -> String {
+        return self.feats.clone()
+    }
+    ///
+    /// A get method to retrive the deps form of self (might be empty)
+    /// 
+    pub fn get_token_deps(&self) -> String {
+        return self.deps.clone()
+    }
+    ///
+    /// A get method to retrive the misc form of self (might be empty)
+    /// 
+    pub fn get_token_misc(&self) -> String {
+        return self.misc.clone()
+    }
     
     fn new(input: Vec<String>) -> Token {
 
@@ -65,19 +100,27 @@ impl Token {
 
         let id = iter.next().unwrap().to_string().parse::<f32>().unwrap();
         let form = iter.next().unwrap().to_string();
-        let _lemma = iter.next();
+        let lemma = iter.next().unwrap().to_string();
         let pos = iter.next().unwrap().to_string();
-        let _xpos = iter.next();
-        let _feats = iter.next();
+        let xpos = iter.next().unwrap().to_string();
+        let feats = iter.next().unwrap().to_string();
         let head = iter.next().unwrap().to_string().parse::<f32>().unwrap();
         let deprel = iter.next().unwrap().to_string();
+        let deps = iter.next().unwrap().to_string();
+        let misc = iter.next().unwrap().to_string();
+        assert!(iter.next().is_none());
 
         Self {
             id: id,
             form: form,
+            lemma: lemma,
             pos: pos,
+            xpos: xpos,
+            feats: feats,
             head: head,
             deprel: deprel,
+            deps: deps,
+            misc: misc
         }
     }
 

@@ -6,9 +6,10 @@ use crate::{tree_2_plot::TreePlotData, conll_2_plot::WalkData, string_2_conll::T
 
 #[derive(Debug)]
 pub enum Accumulator {
-    TPD(Vec<TreePlotData>),
-    T2S(Vec<String>),
-    WD(WalkData)
+    TPD(Vec<TreePlotData>), // for Tree2Plot
+    T2S(String),            // for Tree2String
+    WD(WalkData),           // for Conll2Plot
+    C2S(Vec<String>)        // for Conll2String
 }
 
 impl<'a> TryFrom<&'a mut Accumulator> for &'a mut Vec<TreePlotData> {
@@ -21,12 +22,12 @@ impl<'a> TryFrom<&'a mut Accumulator> for &'a mut Vec<TreePlotData> {
     }
 }
 
-impl<'a> TryFrom<&'a mut Accumulator> for &'a mut Vec<String> {
+impl<'a> TryFrom<&'a mut Accumulator> for &'a mut String {
     type Error = Box<dyn Error>;
     fn try_from(value: &'a mut Accumulator) -> Result<Self, Self::Error> {
         match value {
             Accumulator::T2S(x) => Ok(x),
-            _ => Err(format!("could not convert to {:?} from {:?}", std::any::type_name::<Vec<String>>(), value).into())
+            _ => Err(format!("could not convert to {:?} from {:?}", std::any::type_name::<String>(), value).into())
         }
     }
 }
@@ -37,6 +38,16 @@ impl<'a> TryFrom<&'a mut Accumulator> for &'a mut WalkData {
         match value {
             Accumulator::WD(x) => Ok(x),
             _ => Err(format!("could not convert to {:?} from {:?}", std::any::type_name::<WalkData>(), value).into())
+        }
+    }
+}
+
+impl<'a> TryFrom<&'a mut Accumulator> for &'a mut Vec<String> {
+    type Error = Box<dyn Error>;
+    fn try_from(value: &'a mut Accumulator) -> Result<Self, Self::Error> {
+        match value {
+            Accumulator::C2S(x) => Ok(x),
+            _ => Err(format!("could not convert to {:?} from {:?}", std::any::type_name::<Vec<String>>(), value).into())
         }
     }
 }

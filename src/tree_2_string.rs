@@ -5,7 +5,7 @@
 
 use id_tree::*;
 use std::{error::Error};
-use std::fs::write;
+use crate::config::configure_structures::Saver;
 use crate::generic_enums::{Accumulator, Element};
 use crate::generic_traits::generic_traits::{WalkActions, WalkTree, Structure2PlotBuilder};
 
@@ -57,16 +57,15 @@ impl Structure2PlotBuilder<Tree<String>> for Tree2String {
     fn build(&mut self, save_to: &str) -> Result<(), Box<dyn Error>> {
         
         // run the recursive extraction
-        let mut accumulator = Accumulator::T2S(Vec::<String>::new());
+        let mut accumulator = Accumulator::T2S(String::from(""));
         self.walk(None, &mut accumulator)?;
 
-        // move from accumulator vec to string
-        let string_vec = <&mut Vec<String>>::try_from(&mut accumulator).unwrap();
-        let prediction = string_vec.join(" ");
+        // move from accumulator to string
+        let prediction = <&mut String>::try_from(&mut accumulator).unwrap();
 
         // save to file and set output
-        write(save_to, prediction.clone()).expect("Unable to write file");
-        self.output = Some(prediction);
+        vec![prediction.clone()].save_output(save_to)?;
+        self.output = Some(prediction.clone());
 
         Ok(())
 
@@ -103,9 +102,10 @@ impl WalkActions for Tree2String {
 
         // double leaves are ignored in the tree2string construction, every leaf is build as if it
         // was a singular leaf (with parenthesis)
-        let data_vec = <&mut Vec<String>>::try_from(data)?; 
+        let data_str = <&mut String>::try_from(data)?; 
         let node_data = self.tree.get(node_id)?.data();
-        data_vec.push(format!("{}{}{}", OPEN_BRACKET.to_string(), node_data, CLOSE_BRACKET.to_string()));
+        let sep = if data_str.is_empty() { "" } else { " " };
+        *data_str += &format!("{}{}{}{}", sep, OPEN_BRACKET.to_string(), node_data, CLOSE_BRACKET.to_string());
         Ok(())
     }
 
@@ -113,8 +113,9 @@ impl WalkActions for Tree2String {
 
         let node_id = <&NodeId>::try_from(element_id)?;
         let node_data = self.tree.get(node_id)?.data();
-        let data_vec = <&mut Vec<String>>::try_from(data)?;
-        data_vec.push(format!("{}{}", OPEN_BRACKET.to_string(), node_data));
+        let data_str = <&mut String>::try_from(data)?;
+        let sep = if data_str.is_empty() { "" } else { " " };
+        *data_str += &format!("{}{}{}", sep, OPEN_BRACKET.to_string(), node_data);
         Ok(())
     }
 
@@ -127,9 +128,8 @@ impl WalkActions for Tree2String {
     }
 
     fn finish_recursion(&self, data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
-        let data_vec = <&mut Vec<String>>::try_from(data)?;
-        let last = data_vec.pop().unwrap();
-        data_vec.push(format!("{}{}", last, CLOSE_BRACKET.to_string()));
+        let data_str = <&mut String>::try_from(data)?;
+        *data_str += &format!("{}", CLOSE_BRACKET.to_string());
         Ok(())
     }
 
@@ -144,7 +144,7 @@ mod tests {
     use crate::tree_2_string::Tree2String;
 
     #[test]
-    fn double_leaf() {
+    fn tree_double_leaf() {
 
         let save_to = String::from("Output/constituency_inverse_double.txt");
         let example = String::from("(S (NP (det The) (N people)) (VP (V watch) (NP (det the) (N game))))");
@@ -154,7 +154,7 @@ mod tests {
     } 
 
     #[test]
-    fn single_leaf() {
+    fn tree_single_leaf() {
 
         let save_to = String::from("Output/constituency_inverse_single.txt");
         let example = String::from("(36 (9 (3) (3)) (4 (2) (2)))");
