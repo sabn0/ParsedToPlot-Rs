@@ -240,7 +240,6 @@ mod tests {
     }
 
     #[test]
-    //#[ignore]
     fn constituency() {
 
         let sequences = config_test_template("c", "Input/constituencies.txt", "Output", None);
@@ -253,7 +252,6 @@ mod tests {
     }
 
     #[test]
-    //#[ignore]
     fn dependency() {
 
         let sequences = config_test_template("d", "Input/conll.txt", "Output", None);
@@ -266,7 +264,6 @@ mod tests {
     }
 
     #[test]
-    //#[ignore]
     #[should_panic(expected = "Resulted in error in parsing: input selector e is invalid")]
     fn invalid_selector() {
         
@@ -280,7 +277,6 @@ mod tests {
     }
 
     #[test]
-    //#[ignore]
     #[should_panic(expected = "there should be 4 arguments supplied: constituency file and output dir, found 5")]
     fn invalid_length() {
 
