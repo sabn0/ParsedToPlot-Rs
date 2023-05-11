@@ -109,7 +109,7 @@ impl WalkActions for Conll2String {
 mod tests {
 
     use crate::{String2StructureBuilder, Structure2PlotBuilder, String2Conll};
-    use super::Conll2String;
+    use crate::Conll2String;
 
     #[test]
     fn conll() {

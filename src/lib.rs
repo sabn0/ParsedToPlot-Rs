@@ -191,12 +191,12 @@
 //! 
 
 mod config;
-mod string_2_conll;
-mod conll_2_plot;
-mod conll_2_string;
 mod string_2_tree;
+mod string_2_conll;
 mod tree_2_plot;
+mod conll_2_plot;
 mod tree_2_string;
+mod conll_2_string;
 mod generic_traits;
 mod sub_tree_children;
 mod generic_enums;
@@ -205,7 +205,8 @@ pub use config::Config;
 pub use string_2_tree::String2Tree;
 pub use string_2_conll::String2Conll;
 pub use tree_2_plot::Tree2Plot;
-pub use tree_2_string::Tree2String;
 pub use conll_2_plot::Conll2Plot;
+pub use tree_2_string::Tree2String;
+pub use conll_2_string::Conll2String;
 pub use generic_traits::generic_traits::String2StructureBuilder;
 pub use generic_traits::generic_traits::Structure2PlotBuilder;
