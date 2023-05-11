@@ -5,7 +5,7 @@
 
 use id_tree::*;
 use std::{error::Error};
-
+use std::fs::write;
 use crate::generic_enums::{Accumulator, Element};
 use crate::generic_traits::generic_traits::{WalkActions, WalkTree, Structure2PlotBuilder};
 
@@ -14,7 +14,8 @@ const OPEN_BRACKET: &str = "(";
 
  pub struct Tree2String {
     tree: Tree<String>,
-    double_leaf: bool
+    double_leaf: bool,
+    output: Option<String>
 }
 
 
@@ -32,13 +33,29 @@ impl Structure2PlotBuilder<Tree<String>> for Tree2String {
 
         Self {
             double_leaf: double_leaf,
-            tree: structure
+            tree: structure,
+            output: None
         }
     }
 
-    fn build(&mut self, _save_to: &str) -> Result<(), Box<dyn Error>> {
+    fn build(&mut self, save_to: &str) -> Result<(), Box<dyn Error>> {
+        
+        // run the recursive extraction
+        let mut accumulator = Accumulator::T2S(Vec::<String>::new());
+        self.walk(None, &mut accumulator)?;
+
+        // move from accumulator vec to string
+        let string_vec = <&mut Vec<String>>::try_from(&mut accumulator).unwrap();
+        let prediction = string_vec.join(" ");
+
+        // save to file and set output
+        write(save_to, prediction.clone()).expect("Unable to write file");
+        self.output = Some(prediction);
+
         Ok(())
+
     }
+
 }
 
 
@@ -105,57 +122,55 @@ impl WalkActions for Tree2String {
 
 }
 
+impl Tree2String {
 
+    pub fn get_constituency(self) -> String {
+        assert!(self.output.is_some(), "build most be evoked before retrival of constituency");
+        self.output.unwrap().clone()
+    }
+
+}
 
 
 #[cfg(test)]
 mod tests {
 
-    use crate::string_2_tree::String2Tree;
-    use crate::generic_enums::{Accumulator};
-    use crate::generic_traits::generic_traits::WalkTree;
-    use crate::{String2StructureBuilder, Structure2PlotBuilder};
+    use crate::{String2StructureBuilder, Structure2PlotBuilder, String2Tree};
     use crate::tree_2_string::Tree2String;
 
     #[test]
     fn double_leaf() {
 
+        let save_to = String::from("Output/constituency_inverse_double.txt");
         let example = String::from("(1-S (NP (det The) (N people)) (VP (V watch) (NP (det the) (N game))))");
-        let prediction = inverse_check(example.clone());
+        let prediction = inverse_check(example.clone(), save_to);
         assert_eq!(example, prediction, "failed, original example: {} != prediction: {}", example, prediction);
     } 
 
     #[test]
     fn single_leaf() {
 
+        let save_to = String::from("Output/constituency_inverse_single.txt");
         let example = String::from("(0-S (36 (9 (3) (3)) (4 (2) (2))))");
-        let prediction = inverse_check(example.clone());
+        let prediction = inverse_check(example.clone(), save_to);
         assert_eq!(example, prediction, "failed, original example: {} != prediction: {}", example, prediction);
     } 
 
-    fn inverse_check(example: String) -> String { 
+    fn inverse_check(example: String, save_to: String) -> String { 
 
         // check by building tree and returning to the original input
 
         // forward
         let mut constituency = example;
         let mut string2tree: String2Tree = String2StructureBuilder::new();
-        if let Err(e) = string2tree.build(&mut constituency) {
-            panic!("{}", e);
-        }
+        string2tree.build(&mut constituency).unwrap();
         let tree = string2tree.get_structure();
 
         // backward
-        let mut accumulator = Accumulator::T2S(Vec::<String>::new());
-        let tree2string: Tree2String = Structure2PlotBuilder::new(tree);
-        if let Err(e) = tree2string.walk(None, &mut accumulator) {
-            panic!("{}", e);
-        }
+        let mut tree2string: Tree2String = Structure2PlotBuilder::new(tree);
+        tree2string.build(&save_to).unwrap();
 
-        let string_vec = <&mut Vec<String>>::try_from(&mut accumulator).unwrap();
-        let prediction = string_vec.join(" ");
-
-        prediction
+        tree2string.get_constituency()
         
     }
 
