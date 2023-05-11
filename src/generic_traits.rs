@@ -55,10 +55,7 @@ pub mod generic_traits {
     pub trait WalkTree: WalkActions {
     
         fn get_root_element(&self) -> Result<Element, Box<dyn Error>>;
-    
         fn get_children_ids(&self, element_id: Element) -> Result<Vec<Element>, Box<dyn Error>>;
-    
-        // Element is an enum that holds a -reference- => &NodeId or &Token
         fn walk(&self, item: Option<Element>, data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
     
             // walk in DFS

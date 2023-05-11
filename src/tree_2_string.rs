@@ -9,13 +9,38 @@ use std::fs::write;
 use crate::generic_enums::{Accumulator, Element};
 use crate::generic_traits::generic_traits::{WalkActions, WalkTree, Structure2PlotBuilder};
 
-const CLOSE_BRACKETS: &str = ")";
+const CLOSE_BRACKET: &str = ")";
 const OPEN_BRACKET: &str = "(";
 
  pub struct Tree2String {
     tree: Tree<String>,
-    double_leaf: bool,
     output: Option<String>
+}
+
+impl Tree2String {
+
+    pub fn get_constituency(self, inverse: bool) -> String {
+        assert!(self.output.is_some(), "build most be evoked before retrival of constituency");
+        let constituency = self.output.unwrap().clone();
+
+        // mind you that this constituency is built in singular mode regardless of the tree it repsresents.
+        // for the purpse of checking the inverse tree2string(string2tree(x)) = x, once can use the inverse
+        // flag to return the original. This option can have unexpected results for non-double leaf trees!
+
+        if inverse {
+            constituency.split(' ').map(|x| {
+                if x.starts_with(OPEN_BRACKET) && x.ends_with(CLOSE_BRACKET) {
+                    let (left, right) = x.split_once(CLOSE_BRACKET).unwrap();
+                    left.split_once(OPEN_BRACKET).unwrap().1.to_string() + right
+                } else {
+                    x.to_string()
+                }
+            }).collect::<Vec<String>>().join(" ").to_string()
+        } else {
+            constituency
+        }
+    }
+
 }
 
 
@@ -23,16 +48,7 @@ impl Structure2PlotBuilder<Tree<String>> for Tree2String {
 
     fn new(structure: Tree<String>) -> Self {
 
-        let root_data = structure.get(structure.root_node_id().unwrap()).unwrap().data();
-        let (is_double, _data) = root_data.split_once('-').unwrap();
-        let double_leaf = match is_double {
-            "1" => true,
-            "0" => false,
-            _ => panic!("incorrect bin for is double")
-        };
-
         Self {
-            double_leaf: double_leaf,
             tree: structure,
             output: None
         }
@@ -85,13 +101,11 @@ impl WalkActions for Tree2String {
 
         let node_id = <&NodeId>::try_from(element_id)?;
 
-        // if the tree is a double leaf tree (constituency) then
+        // double leaves are ignored in the tree2string construction, every leaf is build as if it
+        // was a singular leaf (with parenthesis)
         let data_vec = <&mut Vec<String>>::try_from(data)?; 
         let node_data = self.tree.get(node_id)?.data();
-        match self.double_leaf {
-            true => data_vec.push(format!("{}", node_data)),
-            false => data_vec.push(format!("{}{}{}", OPEN_BRACKET.to_string(), node_data, CLOSE_BRACKETS.to_string()))
-        };
+        data_vec.push(format!("{}{}{}", OPEN_BRACKET.to_string(), node_data, CLOSE_BRACKET.to_string()));
         Ok(())
     }
 
@@ -115,19 +129,10 @@ impl WalkActions for Tree2String {
     fn finish_recursion(&self, data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
         let data_vec = <&mut Vec<String>>::try_from(data)?;
         let last = data_vec.pop().unwrap();
-        data_vec.push(format!("{}{}", last, CLOSE_BRACKETS.to_string()));
+        data_vec.push(format!("{}{}", last, CLOSE_BRACKET.to_string()));
         Ok(())
     }
 
-
-}
-
-impl Tree2String {
-
-    pub fn get_constituency(self) -> String {
-        assert!(self.output.is_some(), "build most be evoked before retrival of constituency");
-        self.output.unwrap().clone()
-    }
 
 }
 
@@ -142,8 +147,9 @@ mod tests {
     fn double_leaf() {
 
         let save_to = String::from("Output/constituency_inverse_double.txt");
-        let example = String::from("(1-S (NP (det The) (N people)) (VP (V watch) (NP (det the) (N game))))");
-        let prediction = inverse_check(example.clone(), save_to);
+        let example = String::from("(S (NP (det The) (N people)) (VP (V watch) (NP (det the) (N game))))");
+        let inverse = true;
+        let prediction = inverse_check(example.clone(), save_to, inverse);
         assert_eq!(example, prediction, "failed, original example: {} != prediction: {}", example, prediction);
     } 
 
@@ -151,12 +157,13 @@ mod tests {
     fn single_leaf() {
 
         let save_to = String::from("Output/constituency_inverse_single.txt");
-        let example = String::from("(0-S (36 (9 (3) (3)) (4 (2) (2))))");
-        let prediction = inverse_check(example.clone(), save_to);
+        let example = String::from("(36 (9 (3) (3)) (4 (2) (2)))");
+        let inverse = false;
+        let prediction = inverse_check(example.clone(), save_to, inverse);
         assert_eq!(example, prediction, "failed, original example: {} != prediction: {}", example, prediction);
     } 
 
-    fn inverse_check(example: String, save_to: String) -> String { 
+    fn inverse_check(example: String, save_to: String, inverse: bool) -> String { 
 
         // check by building tree and returning to the original input
 
@@ -170,7 +177,7 @@ mod tests {
         let mut tree2string: Tree2String = Structure2PlotBuilder::new(tree);
         tree2string.build(&save_to).unwrap();
 
-        tree2string.get_constituency()
+        tree2string.get_constituency(inverse)
         
     }
 

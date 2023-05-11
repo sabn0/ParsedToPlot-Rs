@@ -3,6 +3,12 @@
 // Under MIT license
 //
 
+// once the constituency tree is done: this build takes care of both double and singular leaves. 
+// However, the tree construction does not leave a mark on the built tree that annotates from which
+// type of leaf type it was built. For that reason I use a binary annotation, 1 for singular leaves
+// and 0 for double leaves. The mark will be added to the root data after a ;; mark, and stripped 
+// before plotting that node.
+
 use std::error::Error;
 use id_tree::*;
 use id_tree::InsertBehavior::*;
@@ -20,6 +26,30 @@ pub struct String2Tree {
     tree: Tree<String>,
     parent_node_id: Option<NodeId>,
     level_balance: i32
+}
+
+impl String2Tree {
+
+    /// A method that updates the current parent node in the parsing process.
+    /// No need to call this method directly as users.
+    fn update_parent(&mut self, item_id: &NodeId, closers: usize) -> Result<(), Box<dyn Error>> {
+
+        if closers > 0 {
+            let ancestors_ids = self.tree.ancestor_ids(item_id)?.collect::<Vec<&NodeId>>();
+            let parent_node_id = ancestors_ids
+            .get(closers-1)
+            .expect("inconsistent number of closers and ancestors for node id")
+            .to_owned()
+            .to_owned();        
+            self.parent_node_id = Some(parent_node_id);
+        } else {
+            self.parent_node_id = None;
+        }
+
+        Ok(())
+    }
+
+
 }
 
 impl String2StructureBuilder for String2Tree {
@@ -43,7 +73,7 @@ impl String2StructureBuilder for String2Tree {
         Self {
             tree: Tree::new(),
             parent_node_id: None,
-            level_balance: 0
+            level_balance: 0,
         }
     }
 
@@ -100,7 +130,10 @@ impl String2StructureBuilder for String2Tree {
             // add the node to the tree. This can either be the root of the tree or normal node
             let new_node_id = match parent_id {
                 // case of a normal node, parent_id already exists. Add new node under parent
-                Some(parent_id) => self.tree.insert(new_node, UnderNode(parent_id))?,
+                Some(parent_id) => {
+
+                    self.tree.insert(new_node, UnderNode(parent_id))?
+                },
                 // case of a root node, parent_id is None. Add new node as root
                 None => self.tree.insert(new_node, AsRoot)?
             };
@@ -137,7 +170,7 @@ impl String2StructureBuilder for String2Tree {
 
                 // Create a new node and add to the tree
                 let parent_id = self.parent_node_id.as_ref();
-                let new_node_id = add_node(node_str, &parent_id)?;
+                let new_node_id = add_node(&node_str, &parent_id)?;
 
                 // double or singular leaves change the requested parent for next iteration. In singular leaves,
                 // K closures mean that the parent for next iteration is K levels above. In double leaves,
@@ -157,29 +190,6 @@ impl String2StructureBuilder for String2Tree {
         
     }
 
-
-}
-
-impl String2Tree {
-
-    /// A method that updates the current parent node in the parsing process.
-    /// No need to call this method directly as users.
-    fn update_parent(&mut self, item_id: &NodeId, closers: usize) -> Result<(), Box<dyn Error>> {
-
-        if closers > 0 {
-            let ancestors_ids = self.tree.ancestor_ids(item_id)?.collect::<Vec<&NodeId>>();
-            let parent_node_id = ancestors_ids
-            .get(closers-1)
-            .expect("inconsistent number of closers and ancestors for node id")
-            .to_owned()
-            .to_owned();        
-            self.parent_node_id = Some(parent_node_id);
-        } else {
-            self.parent_node_id = None;
-        }
-
-        Ok(())
-    }
 
 }
 
