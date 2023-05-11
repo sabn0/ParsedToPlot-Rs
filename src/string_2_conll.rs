@@ -4,14 +4,11 @@
 //
 
 use std::error::Error;
-
 use crate::generic_traits::generic_traits::String2StructureBuilder;
 
 const CONLL_SIZE: usize = 10;
 
-/// A struct that wraps the -needed- fields to draw a token
-/// The token struct and impl are not used by the user, rather
-/// The String2Conll implementation
+/// A struct that wraps the fields of a conll. The token struct and impl are not used by the user, rather The String2Conll implementation 
 #[derive(Clone, Debug)]
 pub struct Token {
     id: f32,
@@ -95,9 +92,7 @@ impl Token {
         let mut iter = input.into_iter();
 
         // id (int), form, lemma, upos, xpos, feats, head, deprel, deps, misc
-        // uses only:
-        // id , form, upos, head, deprel, 
-
+        // for the needs of plotting dependency only id, form, pos, head and deprel are used
         let id = iter.next().unwrap().to_string().parse::<f32>().unwrap();
         let form = iter.next().unwrap().to_string();
         let lemma = iter.next().unwrap().to_string();
@@ -126,7 +121,8 @@ impl Token {
 
 }
 
-/// A struct that holds sequence of tokens in vector
+/// A String2StructureBuilder sturct, mainly holds the tokens object. This type will implement the String2StructureBuilder,
+/// with a dependency vec string as Input and a made Vec<Token> as output.
 #[derive(Clone)]
 pub struct String2Conll {
     tokens: Vec<Token>
@@ -160,13 +156,13 @@ impl String2StructureBuilder for String2Conll {
     /// Get a copy of the conll (should be called after build)
     /// 
     fn get_structure(&self) -> Self::Out {
+        assert!(!self.tokens.is_empty(), "get_structure() should be called after using build(...)");
         return self.tokens.clone()
     }
 
     /// 
-    /// An implementation of the build method, construction of tokens 
-    /// Receives a vector of strings that represents a conll format.
-    /// 
+    /// A recursive method that builds a mutable Vec<Token> structure from a dependency vec string
+    /// Returns Ok if the process was succesful (error otherwise)
     /// 
     /// # Examples
     /// 
@@ -181,23 +177,27 @@ impl String2StructureBuilder for String2Conll {
     ///     "3	the	the	DET	_	_	4	det	_	_",
     ///     "4	game	game	NOUN	_	_	2	dobj	_	_"
     /// ].map(|x| x.to_string()).to_vec();
+    /// let gold_first_token_form = "The";
+    /// let gold_last_token_id = 4.0;
+    /// 
     /// let mut string2conll: String2Conll = String2StructureBuilder::new();
-    /// let _res = match string2conll.build(&mut dependency) {
-    ///     Ok(_res) => {},
-    ///     Err(e) => panic!("{}", e) 
-    /// };
+    /// 
+    /// if let Err(e) = string2conll.build(&mut dependency) {
+    ///     panic!("{}", e); 
+    /// }
     ///
     /// let conll = string2conll.get_structure();
     /// 
-    /// let first_token = conll.first().unwrap();
-    /// assert!(first_token.get_token_form() == "The");
-    /// let last_token = conll.last().unwrap();
-    /// assert!(last_token.get_token_id().to_string() == "4");
+    /// let prediction_first_token_form = conll.first().unwrap().get_token_form();
+    /// assert_eq!(prediction_first_token_form, gold_first_token_form);
+    /// 
+    /// let prediction_last_token_id = conll.last().unwrap().get_token_id();
+    /// assert_eq!(prediction_last_token_id, gold_last_token_id);
     /// ```
     /// 
     fn build(&mut self, input: &mut Self::Input) -> Result<(), Box<dyn Error>> {
-        // the input is a vector of strings, each string is a line in conll (token string represenation)
 
+        // the input is a vector of strings, each string is a line in conll (token string represenation)
         for line in input.iter() {
     
             let token_vec: Vec<String> = line.split("\t").map(|s| s.to_string()).collect();
@@ -213,8 +213,8 @@ impl String2StructureBuilder for String2Conll {
 #[cfg(test)]
 mod tests {
 
-    use crate::generic_traits::generic_traits::String2StructureBuilder;
     use super::String2Conll;
+    use crate::generic_traits::generic_traits::String2StructureBuilder;
 
     #[test]
     fn load_sequence() {
@@ -226,17 +226,17 @@ mod tests {
             "3	the	the	DET	_	_	4	det	_	_",
             "4	game	game	NOUN	_	_	2	dobj	_	_"
         ].map(|x| x.to_string()).to_vec();
+        let gold_first_token_form = "The";
+        let gold_last_token_id = 4.0;
 
         let mut string2conll: String2Conll = String2StructureBuilder::new();
-        let _res = match string2conll.build(&mut dependency) {
-            Ok(_res) => {},
-            Err(e) => panic!("{}", e) 
-        };
-
+        string2conll.build(&mut dependency).unwrap();
         let conll = string2conll.get_structure();
-        let first_token = conll.first().unwrap();
-        assert!(first_token.get_token_form() == "The");
-        let last_token = conll.last().unwrap();
-        assert!(last_token.get_token_id().to_string() == "4");
+
+        let prediction_first_token_form = conll.first().unwrap().get_token_form();
+        assert_eq!(prediction_first_token_form, gold_first_token_form);
+
+        let prediction_last_token_id = conll.last().unwrap().get_token_id();
+        assert_eq!(prediction_last_token_id, gold_last_token_id);
     }
 }
