@@ -3,12 +3,6 @@
 // Under MIT license
 //
 
-// once the constituency tree is done: this build takes care of both double and singular leaves. 
-// However, the tree construction does not leave a mark on the built tree that annotates from which
-// type of leaf type it was built. For that reason I use a binary annotation, 1 for singular leaves
-// and 0 for double leaves. The mark will be added to the root data after a ;; mark, and stripped 
-// before plotting that node.
-
 use std::error::Error;
 use id_tree::*;
 use id_tree::InsertBehavior::*;
@@ -19,9 +13,8 @@ const NODE_DELIMITER: &str = " ";
 const CLOSE_BRACKETS: char = ')';
 const OPEN_BRACKETS: char = '(';
 
-
-/// A String2Tree object, wrap the Tree-String id_tree object.
-/// T mentions the generic type of the data (string, numeric, etc).
+/// A String2Tree struct, mainly holds the tree object. This type will implement the String2StructureBuilder, 
+/// with a constituency String as Input and a made Tree<String> as output.
 pub struct String2Tree {
     tree: Tree<String>,
     parent_node_id: Option<NodeId>,
@@ -30,8 +23,8 @@ pub struct String2Tree {
 
 impl String2Tree {
 
-    /// A method that updates the current parent node in the parsing process.
-    /// No need to call this method directly as users.
+    // A method that updates the current parent node in the parsing process.
+    // This method isn't called directly as users, not exposed.
     fn update_parent(&mut self, item_id: &NodeId, closers: usize) -> Result<(), Box<dyn Error>> {
 
         if closers > 0 {
@@ -73,7 +66,7 @@ impl String2StructureBuilder for String2Tree {
         Self {
             tree: Tree::new(),
             parent_node_id: None,
-            level_balance: 0,
+            level_balance: 0,           // a sanity variable during the construction stage
         }
     }
 
@@ -81,11 +74,12 @@ impl String2StructureBuilder for String2Tree {
     /// Get a copy of a tree (should be called after build)
     /// 
     fn get_structure(&self) -> Self::Out {
+        assert!(self.tree.root_node_id().is_some(), "get_structure() should be called after using build(...)");
         return self.tree.clone();
     }
 
     /// 
-    /// A recursive method that builds a Tree-String object from a constituency string
+    /// A recursive method that builds a mutable Tree<String> structure from a constituency string
     /// Returns Ok if the process was succesful (error otherwise)
     ///
     /// # Examples
@@ -94,46 +88,46 @@ impl String2StructureBuilder for String2Tree {
     /// use parsed_to_plot::String2Tree;
     /// use parsed_to_plot::String2StructureBuilder;
     /// 
-    /// let mut string2tree: String2Tree = String2StructureBuilder::new();
     /// let mut constituency = String::from("(S (NP (det The) (N people)) (VP (V watch) (NP (det the) (N game))))");
-    /// let _res = match string2tree.build(&mut constituency) {
-    ///     Ok(_res) => Ok(_res),
-    ///     Err(e) => Err(e)
-    /// };
-    /// let mut tree = string2tree.get_structure();
+    /// let gold_root_data = "S";
     /// 
-    /// assert_eq!("S", tree.get(tree.root_node_id().unwrap()).unwrap().data());
+    /// let mut string2tree: String2Tree = String2StructureBuilder::new();
+    /// if let Err(e) = string2tree.build(&mut constituency) {
+    ///     panic!("{}", e);
+    /// }
+    /// 
+    /// let mut tree = string2tree.get_structure();
+    /// let prediction_root_data = tree.get(tree.root_node_id().unwrap()).unwrap().data();
+    /// 
+    /// assert_eq!(prediction_root_data, gold_root_data);
     /// ```
     /// 
     fn build(&mut self, input: &mut Self::Input) -> Result<(), Box<dyn Error>> {
 
-        // if the string is empty the algoritm has finished
+        // If the string is empty the algoritm has finished
         if input.is_empty() {
             assert_eq!(self.level_balance, 0, "number of closers and openers don't match");
             return Ok(());
         }
 
-        // if constituency does not have open delimiter it's the last iteration
-        // else, split by the delimeter
+        // If constituency does not have open delimiter it's the last iteration, (work on right).
+        // else, split by the delimeter (work on left, leave right for next iteration).
         let (left, mut right) = match input.split_once(NODE_DELIMITER) {
             Some((left, right)) => (left.trim().to_owned(), right.trim().to_owned()),
             None => (input.trim().to_owned(), "".to_owned())
         };
 
-        // closure to add node to the tree
+        // A closure to insert a new node to the tree
         let mut add_node = |node_str: &str, parent_id: &Option<&NodeId>| -> Result<NodeId, Box<dyn Error>> {
 
             // create a new node from the input str
             let node_string = String::from(node_str);
             let new_node = Node::new(node_string);
 
-            // add the node to the tree. This can either be the root of the tree or normal node
+            // add the node to the tree. This can either be the root of the tree or another node
             let new_node_id = match parent_id {
-                // case of a normal node, parent_id already exists. Add new node under parent
-                Some(parent_id) => {
-
-                    self.tree.insert(new_node, UnderNode(parent_id))?
-                },
+                // case of an inner node, parent_id already exists. Add new node under parent.
+                Some(parent_id) => self.tree.insert(new_node, UnderNode(parent_id))?,
                 // case of a root node, parent_id is None. Add new node as root
                 None => self.tree.insert(new_node, AsRoot)?
             };
@@ -142,7 +136,7 @@ impl String2StructureBuilder for String2Tree {
         };
 
         // we have done a split by " ". We handle the left size and keep the right to next iter
-        // we will match the number of ")" in left. 
+        // we will validate and match the number of openers and closers in left. 
         let mut closers = left.matches(CLOSE_BRACKETS).count();
         let openers = left.matches(OPEN_BRACKETS).count();
         assert!(openers <= 1, "invalid input structure, consecutive open brackets");
@@ -151,10 +145,10 @@ impl String2StructureBuilder for String2Tree {
         match closers {
             0 => {
 
-                // If = 0, it is an opening node, "(A" . I assert the number of openings to validate the structure.
-                // extract the data from the element.
-                let node_str = left.trim_matches(OPEN_BRACKETS);
+                // If closers = 0, it is an opening node, "(A" . 
+                // I asserted the number of openings to validate the structure.
                 // Create a new node and add to the tree
+                let node_str = left.trim_matches(OPEN_BRACKETS);
                 let parent_id = self.parent_node_id.as_ref();
                 let new_node_id = add_node(node_str, &parent_id)?;
 
@@ -164,7 +158,7 @@ impl String2StructureBuilder for String2Tree {
             },
             _ => {
                 
-                // If > 0 , it is a leaf. it can look like "A)" or "(A)", depending on double or singular
+                // If closers > 0 , it is a leaf. it can look like "A)" or "(A)", depending on double or singular
                 let node_str = left.trim_matches(CLOSE_BRACKETS).trim_matches(OPEN_BRACKETS);
                 assert_ne!(node_str, "", "found a null node in input string");
 
@@ -198,8 +192,8 @@ impl String2StructureBuilder for String2Tree {
 #[cfg(test)]
 mod tests {
 
-    use crate::generic_traits::generic_traits::String2StructureBuilder;
     use super::String2Tree;
+    use crate::generic_traits::generic_traits::String2StructureBuilder;
     use id_tree::{Node, PostOrderTraversal, LevelOrderTraversal, PreOrderTraversal};
     
     enum Traversal<'a> {
@@ -226,12 +220,8 @@ mod tests {
         let mut string2tree: String2Tree = String2StructureBuilder::new();
         
         string2tree.build(&mut constituency).unwrap();
-
         let tree = string2tree.get_structure();
-        let root = match tree.root_node_id() {
-            Some(root) => root,
-            None => panic!("did not find root")
-        };
+        let root = tree.root_node_id().unwrap();
 
         let mut iter = match order {
             "pre" => Traversal::Pre(tree.traverse_pre_order(root).unwrap()),
