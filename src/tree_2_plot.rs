@@ -10,7 +10,7 @@ use std::error::Error;
 use std::ops::Deref;
 use crate::generic_traits::generic_traits::{Structure2PlotBuilder, Structure2PlotPlotter};
 use crate::sub_tree_children::sub_tree_children::SubChildren;
-use crate::walk_tree::{WalkActions, Accumulator, WalkTree};
+use crate::walk_tree::{WalkActions, Accumulator, WalkTree, Element};
 
 const DIM_CONST: usize = 640;
 const FONT_CONST: f32 = 0.0267;
@@ -155,16 +155,29 @@ impl Structure2PlotPlotter<TreePlotData> for Tree2Plot {
 
 impl WalkTree for Tree2Plot {
 
-    fn get_tree(&self) -> &Tree<String> {
-        return &self.tree
+    fn get_root_element(&self) -> Result<Element, Box<dyn Error>> {
+        
+        let root_node_id = self.tree.root_node_id().ok_or("tree is empty")?;
+        let root_element_id = Element::NID(root_node_id);
+        Ok(root_element_id)
+
+    }
+
+    fn get_children_ids(&self, element_id: Element) -> Result<Vec<Element>, Box<dyn Error>> {
+        let node_id = <&NodeId>::try_from(element_id)?;
+        let children_ids = self.tree.children_ids(node_id)?.map(|x| Element::NID(x)).collect::<Vec<Element>>();
+        return Ok(children_ids)
     }
 
 }
 
 impl WalkActions for Tree2Plot {
 
-    fn init_walk(&self, root_node_id: &NodeId, data: &mut Accumulator) -> Result<(), Box<dyn Error>> 
+    fn init_walk(&self, element_id: Element, data: &mut Accumulator) -> Result<(), Box<dyn Error>> 
     {
+
+        let root_node_id = <&NodeId>::try_from(element_id)?;
+
         // get root node label and send with initial positional args to plot
         // bounds are set to -+ 5 but this is arbitrary and not shown on x axis.
         let root_node = self.tree.get(root_node_id).unwrap();
@@ -176,14 +189,15 @@ impl WalkActions for Tree2Plot {
 
         let data_vec = <&mut Vec<TreePlotData>>::try_from(data)?;
         data_vec.push(root_plot_args);
+
         Ok(())
     }
 
-    fn finish_trajectory(&self, _node_id: &NodeId, _data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
+    fn finish_trajectory(&self, _element_id: Element, _data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
         Ok(())
      }
 
-     fn on_node(&self, node_id: &NodeId, parameters: &mut [f32; 6], data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
+     fn on_node(&self, element_id: Element, parameters: &mut [f32; 6], data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
 
         let data_vec = <&mut Vec<TreePlotData>>::try_from(data)?;
         let walk_args = data_vec.last().ok_or("empty vec, probably on non empty node")?;
@@ -196,6 +210,7 @@ impl WalkActions for Tree2Plot {
         // for positional computation, get the total number of sub_children that are leaves for this node
         // every child of the node will be positioned by the proportion of its sub_tree compared to the 
         // total number of leaves in this sub tree.
+        let node_id = <&NodeId>::try_from(element_id)?;
         let n_leaves = *self.node_id2n_sub_children
         .get(node_id)
         .ok_or("didn't find node id in mapping to sub children")? as f32;
@@ -208,7 +223,7 @@ impl WalkActions for Tree2Plot {
         Ok(())
     }
 
-    fn on_child(&self, child_node_id: &NodeId, parameters: &mut [f32; 6], data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
+    fn on_child(&self, child_element_id: Element, parameters: &mut [f32; 6], data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
 
         let x2 = parameters[0];
         let y2 = parameters[1];
@@ -218,6 +233,7 @@ impl WalkActions for Tree2Plot {
         let space_allocated = &mut parameters[5];
 
         // get label for this child;
+        let child_node_id = <&NodeId>::try_from(child_element_id)?;
         let label = self.tree.get(child_node_id).unwrap().data().to_owned();
 
         // calculate positional args for this child
@@ -244,6 +260,11 @@ impl WalkActions for Tree2Plot {
         Ok(())
 
     }
+
+    fn post_walk_update(&self, _element_id: Element, _data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
+        Ok(())
+    }
+
 
     fn finish_recursion(&self, _data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
         Ok(())

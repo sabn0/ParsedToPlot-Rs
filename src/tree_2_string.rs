@@ -6,23 +6,41 @@
 use id_tree::*;
 use std::{error::Error};
 
-use crate::{walk_tree::{WalkActions, Accumulator, WalkTree}, Structure2PlotBuilder};
+use crate::{walk_tree::{WalkActions, Accumulator, WalkTree, Element}, Structure2PlotBuilder};
 
 const CLOSE_BRACKETS: &str = ")";
 const OPEN_BRACKET: &str = "(";
 
  pub struct Tree2String {
-    pub tree: Tree<String>,
+    tree: Tree<String>,
     double_leaf: bool
+}
+
+impl WalkTree for Tree2String {
+
+    fn get_root_element(&self) -> Result<Element, Box<dyn Error>> {
+        let root_node_id = self.tree.root_node_id().ok_or("tree is empty")?;
+        let root_element_id = Element::NID(root_node_id);
+        Ok(root_element_id)
+    }
+
+    fn get_children_ids(&self, element_id: Element) -> Result<Vec<Element>, Box<dyn Error>> {
+        let node_id = <&NodeId>::try_from(element_id)?;
+        let children_ids = self.tree.children_ids(node_id)?.map(|x| Element::NID(x)).collect::<Vec<Element>>();
+        return Ok(children_ids)
+    }
+
 }
 
 impl WalkActions for Tree2String {
 
-    fn init_walk(&self, _root_node_id: &NodeId, _data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
+    fn init_walk(&self, _element_id: Element, _data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
         Ok(())
     }
 
-    fn finish_trajectory(&self, node_id: &NodeId, data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
+    fn finish_trajectory(&self, element_id: Element, data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
+
+        let node_id = <&NodeId>::try_from(element_id)?;
 
         // if the tree is a double leaf tree (constituency) then
         let data_vec = <&mut Vec<String>>::try_from(data)?; 
@@ -34,15 +52,20 @@ impl WalkActions for Tree2String {
         Ok(())
     }
 
-    fn on_node(&self, node_id: &NodeId, _parameters: &mut [f32; 6], data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
+    fn on_node(&self, element_id: Element, _parameters: &mut [f32; 6], data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
 
+        let node_id = <&NodeId>::try_from(element_id)?;
         let node_data = self.tree.get(node_id)?.data();
         let data_vec = <&mut Vec<String>>::try_from(data)?;
         data_vec.push(format!("{}{}", OPEN_BRACKET.to_string(), node_data));
         Ok(())
     }
 
-    fn on_child(&self, _child_node_id: &NodeId, _parameters: &mut [f32; 6], _data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
+    fn on_child(&self, _child_element_id: Element, _parameters: &mut [f32; 6], _data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
+        Ok(())
+    }
+
+    fn post_walk_update(&self, _element_id: Element, _data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
         Ok(())
     }
 
@@ -53,13 +76,9 @@ impl WalkActions for Tree2String {
         Ok(())
     }
 
+
 }
 
-impl WalkTree for Tree2String {
-    fn get_tree(&self) -> &Tree<String> {
-        &self.tree
-    }
-}
 
 impl Structure2PlotBuilder<Tree<String>> for Tree2String {
 

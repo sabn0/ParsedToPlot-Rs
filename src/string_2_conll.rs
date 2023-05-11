@@ -12,7 +12,7 @@ const CONLL_SIZE: usize = 10;
 /// A struct that wraps the -needed- fields to draw a token
 /// The token struct and impl are not used by the user, rather
 /// The String2Conll implementation
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Token {
     id: f32,
     form: String,

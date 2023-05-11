@@ -7,7 +7,7 @@ use std::error::Error;
 
 use super::string_2_conll::*;
 use plotters::{prelude::*, style::text_anchor::{Pos, HPos, VPos}};
-use crate::generic_traits::generic_traits::{Structure2PlotBuilder, Structure2PlotPlotter};
+use crate::{generic_traits::generic_traits::{Structure2PlotBuilder, Structure2PlotPlotter}, walk_tree::{WalkTree, WalkActions, Element, Accumulator}};
 
 const DIM_CONST: u32 = 640;
 const MARGIN: u32 = 15;
@@ -15,7 +15,7 @@ const FONT_SIZE: f32 = 15.0;
 const FONT_CONST: f32 = 7.5 / 5.0;
 
 /// A struct that wraps the needed fileds to plot a token
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ConllPlotData {
     start: f32,                 // start x position
     end: f32,                   // end x position
@@ -25,16 +25,16 @@ pub struct ConllPlotData {
     height: f32
 }
 
+#[derive(Debug)]
 pub struct WalkData {
     conll_plot_data: Vec<ConllPlotData>,
     walk_args: Vec<[f32; 2]>
 }
 
+
 /// A struct that wraps the needed fileds to plot a conll
 pub struct Conll2Plot {
     tokens: Vec<Token>,
-    leaf_ids: Vec<f32>,
-    seq_length: usize,
     y_shift: f32 // room for pos and form
 }
 
@@ -47,27 +47,7 @@ impl Structure2PlotBuilder<Vec<Token>> for Conll2Plot {
 
     fn new(structure: Vec<Token>) -> Self {
         
-        // get a list of all the leaves in the input
-        let seq_length = structure.len();
-        let mut leaf_ids: Vec<f32> = (0..seq_length).map(|x| (x as f32)).collect();
-        for i in 0..seq_length {
-            
-            // if not leaf, remove from the list.
-            // A token cannot be a leaf if it is the head of another token
-            let token = &structure[i as usize];
-            let token_head = token.get_token_head();
-            match leaf_ids.iter().position(|x| *x == token_head) {
-                Some(index) => {
-                    leaf_ids.remove(index);
-                },
-                None => { () }
-            };
-        } 
-        leaf_ids.dedup();
-
         Self {
-            seq_length: seq_length,
-            leaf_ids: leaf_ids,
             tokens: structure,
             y_shift: 2.0
         }
@@ -76,14 +56,18 @@ impl Structure2PlotBuilder<Vec<Token>> for Conll2Plot {
     fn build(&mut self, save_to: &str) -> Result<(), Box<dyn Error>> {
 
         // first run the forward part: extraction of the plotting data through recursion
-        let walk_args: Vec<[f32; 2]> = vec![[0.0, 0.0]; self.seq_length];
+        let walk_args: Vec<[f32; 2]> = vec![[0.0, 0.0]; (&self.tokens).len()];
         let plot_data_vec: Vec<ConllPlotData> = Vec::new();
-        let mut walk_data: WalkData = WalkData { conll_plot_data: plot_data_vec, walk_args: walk_args };
-        self.walk(None, &mut walk_data)?;
+        let walk_data: WalkData = WalkData { conll_plot_data: plot_data_vec, walk_args: walk_args };
+        let mut accumulator = Accumulator::WD(walk_data);
+        self.walk(None, &mut accumulator)?;
+
+        // return to walk data
+        let walk_data = <&mut WalkData>::try_from(&mut accumulator)?;
 
         // determine general plot settings for the example
-        let seq_length = self.seq_length as f32;
-        let built_height = self.y_shift + walk_data.walk_args[0..seq_length as usize].concat().iter().map(|x| *x as usize).max().unwrap() as f32;
+        let seq_length = (&self.tokens).len() as f32;
+        let built_height = self.y_shift + (&walk_data).walk_args[0..seq_length as usize].concat().iter().map(|x| *x as usize).max().unwrap() as f32;
         let total_units = 2*DIM_CONST / (seq_length + built_height) as u32;
         let width = total_units * seq_length as u32;
         let height = total_units * built_height as u32;
@@ -116,7 +100,7 @@ impl Structure2PlotBuilder<Vec<Token>> for Conll2Plot {
         .draw()
         .unwrap();
 
-        self.plot(&mut chart, walk_data.conll_plot_data, font_style)?;
+        self.plot(&mut chart, walk_data.conll_plot_data.clone(), font_style)?;
         
         Ok(())
     }
@@ -173,53 +157,48 @@ impl Structure2PlotPlotter<ConllPlotData> for Conll2Plot {
 
 }
 
-impl Conll2Plot {
 
+impl WalkTree for Conll2Plot {
 
-    fn walk(&self, item: Option<&Token>, walk_data: &mut WalkData) -> Result<(), Box<dyn Error>> {
+    fn get_root_element(&self) -> Result<Element, Box<dyn Error>> {
         
-        // walk args and plot_data_vec are not the same , even not of the same length
-
-        // get root of the sequence if not given
-        if item.is_none() {
-            let mut root_id: Option<f32> = None;
-            for i in 0..self.seq_length {
-
-                let token = &self.tokens[i as usize];
-                let token_head = token.get_token_head();
-                let token_id = token.get_token_id();
-
-                if token_id != token_head {
-                    continue;
-                }
-
-                match root_id {
-                    Some(_root_id) => panic!("not supporting more than one root"),
-                    None => {
-                        root_id = Some(token_id)
-                    }
-                }
-            }
-            
-            let root_token = &self.tokens[root_id.unwrap() as usize];
-            self.walk(Some(root_token), walk_data)?;
-            let this_plot_data = self.extract(root_token, walk_data);
-            walk_data.conll_plot_data.push(this_plot_data);
-            return Ok(())
-
-        }
-
-        // get children of root and calculate distance
-        let root_id = item.unwrap().get_token_id();
-        let mut root_children_ids: Vec<(f32, usize)> = Vec::new();
-        for i in 0..self.seq_length {
+        let mut root_id: Option<f32> = None;
+        for i in 0..(&self.tokens).len() {
 
             let token = &self.tokens[i as usize];
             let token_head = token.get_token_head();
             let token_id = token.get_token_id();
 
-            if token_head == root_id && token_id != root_id {
-                let distance = (root_id - token_id).abs() as usize;
+            if token_id != token_head {
+                continue;
+            }
+
+            match root_id {
+                Some(_root_id) => panic!("not supporting more than one root"),
+                None => {
+                    root_id = Some(token_id)
+                }
+            }
+        }
+        assert!(root_id.is_some());
+        let root_element_id = Element::TID(&self.tokens[root_id.unwrap() as usize]);
+        Ok(root_element_id)
+
+    }
+
+    fn get_children_ids(&self, element_id: Element) -> Result<Vec<Element>, Box<dyn Error>> {
+        
+        let root_token_id = <&Token>::try_from(element_id)?.get_token_id();
+
+        let mut root_children_ids: Vec<(f32, usize)> = Vec::new();
+        for i in 0..(&self.tokens).len() {
+
+            let token = &self.tokens[i as usize];
+            let token_head = token.get_token_head();
+            let token_id = token.get_token_id();
+
+            if token_head == root_token_id && token_id != root_token_id {
+                let distance = (root_token_id - token_id).abs() as usize;
                 root_children_ids.push((token_id, distance));
             }
 
@@ -227,22 +206,48 @@ impl Conll2Plot {
 
         // sort children by distance (ascending order)
         root_children_ids.sort_by(|x, y| x.1.cmp(&y.1));
+        let children_ids = root_children_ids.iter().map(|(token_id, _)| 
+        Element::TID(&self.tokens[*token_id as usize])).collect::<>();
+        
+        Ok(children_ids)
 
-        // send each child to recursion
-        for (child_id, _) in root_children_ids {
-
-            let child_token = &self.tokens[child_id as usize];
-            if !self.leaf_ids.contains(&child_id) {
-                self.walk(Some(child_token), walk_data)?;
-            }
-
-            let this_plot_data = self.extract(child_token, walk_data);
-            walk_data.conll_plot_data.push(this_plot_data);
-        }
-        Ok(())
 
     }
+}
 
+impl WalkActions for Conll2Plot {
+
+    fn init_walk(&self, _element_id: Element, _data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
+        Ok(())
+    }
+
+    fn finish_trajectory(&self, _element_id: Element, _data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
+        Ok(())
+    }
+
+    fn on_node(&self, _element_id: Element, _parameters: &mut [f32; 6], _data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
+        Ok(())
+    }
+
+    fn on_child(&self, _child_element_id: Element, _parameters: &mut [f32; 6], _data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
+        Ok(())
+    }
+
+    fn post_walk_update(&self, element_id: Element, data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
+        let root_token = <&Token>::try_from(element_id)?;
+        let walk_data = <&mut WalkData>::try_from(data)?;
+        let this_plot_data = self.extract(root_token, walk_data);
+        walk_data.conll_plot_data.push(this_plot_data);
+        Ok(())
+    }
+
+    fn finish_recursion(&self, _data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
+        Ok(())
+    }
+
+}
+
+impl Conll2Plot {
 
     fn extract(&self, token: &Token, walk_data: &mut WalkData) -> ConllPlotData {
 
