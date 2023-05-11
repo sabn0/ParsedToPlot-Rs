@@ -1,4 +1,7 @@
 
+//
+// Under MIT license
+//
 
 // A trait to get an iterator over the sub-tree-children-ids a node has
 // using the -id-tree children impl. Available within crate.
