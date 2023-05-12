@@ -2,7 +2,7 @@
 
 ![example workflow](https://github.com/Sabn0/ParsedToPlot-Rs/actions/workflows/rust.yml/badge.svg)
 ![rust version](https://img.shields.io/badge/rust-1.67.1-blue)
-![crates.io](https://img.shields.io/crates/parsed_to_plot)
+![crates.io](https://img.shields.io/crates/parsed_to_plot.svg)
 
 Plots constituency trees and dependency trees given by strings.
 
@@ -11,8 +11,8 @@ Plots constituency trees and dependency trees given by strings.
 Primarily written for inputs like parsed syntactic trees, but can serve other inputs, such as mathematical expressions etc. The program first transforms the input to a conll / tree, then plots the structure, recursively. It is mostly suitable for short parsed sequences of up to 15-20 tokens. The program is a simple drawing program, plots strings that are already parsed. This is not a parser! I wrote this in order to get familiar with Rust and decided to upload it if it can help others. The code uses both the [id-tree](https://crates.io/crates/id_tree) crate and the [plotters](https://crates.io/crates/plotters) crate.
 
 ## Current content
-* String2Tree + Tree2Plot to move from input constituency strings to plot (as API or through command-line).
-* String2Conll + Conll2Plot to move from input dependency strings to plot (as API or through command-line).
+* String2Tree + Tree2Plot to move from input constituency strings to plot (API or through command-line).
+* String2Conll + Conll2Plot to move from input dependency strings to plot (API or through command-line).
 * **From version 0.2.0** - Tree2String / Conll2String to move back from built structure to original input ().
 
 ## Input-Output
