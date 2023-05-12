@@ -4,14 +4,17 @@
 //
 
 use id_tree::*;
-use std::{error::Error};
-use crate::config::configure_structures::Saver;
-use crate::generic_enums::{Accumulator, Element};
-use crate::generic_traits::generic_traits::{WalkActions, WalkTree, Structure2PlotBuilder};
+use std::error::Error;
+
+use super::config::configure_structures::Saver;
+use super::generic_enums::{Accumulator, Element};
+use super::generic_traits::generic_traits::{WalkActions, WalkTree, Structure2PlotBuilder};
 
 const CLOSE_BRACKET: &str = ")";
 const OPEN_BRACKET: &str = "(";
 
+/// A Tree2String struct, mainly holds the tree object. This type will implement Structure2PlotBuilder,
+/// WalkTree and WalkActions, with an ultimate goal of saving a constituency string of the tree to file.
  pub struct Tree2String {
     tree: Tree<String>,
     output: Option<String>
@@ -19,13 +22,16 @@ const OPEN_BRACKET: &str = "(";
 
 impl Tree2String {
 
-    pub fn get_constituency(self, inverse: bool) -> String {
-        assert!(self.output.is_some(), "build most be evoked before retrival of constituency");
+    /// A method to retrieve the constituency string after building it from the tree.
+    /// Can be called only after build() has been called. See example on lib.rs.
+    fn get_constituency(self, inverse: bool) -> String {
+
+        assert!(self.output.is_some(), "build() most be evoked before retrival of constituency");
         let constituency = self.output.unwrap().clone();
 
-        // mind you that this constituency is built in singular mode regardless of the tree it repsresents.
-        // for the purpse of checking the inverse tree2string(string2tree(x)) = x, once can use the inverse
-        // flag to return the original. This option can have unexpected results for non-double leaf trees!
+        // The constituency is built in singular mode regardless of the tree it repsresents.
+        // for the purpse of checking the inverse tree2string(string2tree(x)) = x, one can use the inverse
+        // flag to return the original. This option can have unexpected results for non-double leaf trees.
 
         if inverse {
             constituency.split(' ').map(|x| {
@@ -73,7 +79,7 @@ impl Structure2PlotBuilder<Tree<String>> for Tree2String {
 
 }
 
-
+// WalkTree is very similar to the implementation in Tree2Plot
 impl WalkTree for Tree2String {
 
     fn get_root_element(&self) -> Result<Element, Box<dyn Error>> {
@@ -90,6 +96,8 @@ impl WalkTree for Tree2String {
 
 }
 
+// WalkActions is very similar to the implementation in Tree2Plot, with the distinction beening
+// the accumulator and its goal (save to string over plot to img).
 impl WalkActions for Tree2String {
 
     fn init_walk(&self, _element_id: Element, _data: &mut Accumulator) -> Result<(), Box<dyn Error>> {
@@ -140,8 +148,9 @@ impl WalkActions for Tree2String {
 #[cfg(test)]
 mod tests {
 
-    use crate::{String2StructureBuilder, Structure2PlotBuilder, String2Tree};
-    use crate::tree_2_string::Tree2String;
+    use super::Tree2String;
+    use super::Structure2PlotBuilder;
+    use crate::{String2StructureBuilder, String2Tree};
 
     #[test]
     fn tree_double_leaf() {
@@ -150,7 +159,7 @@ mod tests {
         let example = String::from("(S (NP (det The) (N people)) (VP (V watch) (NP (det the) (N game))))");
         let inverse = true;
         let prediction = inverse_check(example.clone(), save_to, inverse);
-        assert_eq!(example, prediction, "failed, original example: {} != prediction: {}", example, prediction);
+        assert_eq!(example, prediction, "\nfailed, original example:\n {}\n != \n prediction: {}", example, prediction);
     } 
 
     #[test]
@@ -160,14 +169,14 @@ mod tests {
         let example = String::from("(36 (9 (3) (3)) (4 (2) (2)))");
         let inverse = false;
         let prediction = inverse_check(example.clone(), save_to, inverse);
-        assert_eq!(example, prediction, "failed, original example: {} != prediction: {}", example, prediction);
+        assert_eq!(example, prediction, "\nfailed, original example:\n {}\n != \nprediction: {}", example, prediction);
     } 
 
     fn inverse_check(example: String, save_to: String, inverse: bool) -> String { 
 
-        // check by building tree and returning to the original input
+        // check by building tree and returning to the original input, expecting x = f(f^-1(x))
 
-        // forward
+        // forward 
         let mut constituency = example;
         let mut string2tree: String2Tree = String2StructureBuilder::new();
         string2tree.build(&mut constituency).unwrap();
