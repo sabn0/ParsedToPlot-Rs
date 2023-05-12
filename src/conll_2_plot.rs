@@ -4,69 +4,67 @@
 //
 
 use std::error::Error;
-
-use super::string_2_conll::*;
 use plotters::{prelude::*, style::text_anchor::{Pos, HPos, VPos}};
-use crate::generic_enums::{Element, Accumulator};
-use crate::generic_traits::generic_traits::{Structure2PlotBuilder, Structure2PlotPlotter, WalkActions, WalkTree};
+use super::string_2_conll::Token;
+use super::generic_enums::{Element, Accumulator};
+use super::generic_traits::generic_traits::{Structure2PlotBuilder, Structure2PlotPlotter, WalkActions, WalkTree};
 
 const DIM_CONST: u32 = 640;
 const MARGIN: u32 = 15;
 const FONT_SIZE: f32 = 15.0;
 const FONT_CONST: f32 = 7.5 / 5.0;
 
-/// A struct that wraps the needed fileds to plot a token
+/// A struct that wraps the needed fields to plot a token
 #[derive(Clone, Debug)]
-pub struct ConllPlotData {
+pub(in crate) struct ConllPlotData {
     start: f32,                 // start x position
     end: f32,                   // end x position
-    deprel: String,
-    pos: String,
-    form: String,
-    height: f32
+    deprel: String,             // to be written above an arrow
+    pos: String,                // to be written on line 1
+    form: String,               // to be written on line 0
+    height: f32                 // height of arrow
 }
 
+// A struct that wraps the needed fields to compute location and plot Vec<token>
 #[derive(Debug)]
-pub struct WalkData {
+pub(in crate) struct WalkData {
     conll_plot_data: Vec<ConllPlotData>,
     walk_args: Vec<[f32; 2]>
 }
 
 
-/// A struct that wraps the needed fileds to plot a conll
+/// A Conll2Plot struct, mainly holds the tokens vector. This type will implement Structure2PlotBuilder, Structure2PlotPlotter,
+/// WalkTree and WalkActions, with an ultimate goal of saving a plot of the dependency to file.
 pub struct Conll2Plot {
     tokens: Vec<Token>,
     y_shift: f32 // room for pos and form
 }
 
-///
-/// This is a building process of a plot.
-/// Called after using String2Structure.
-/// See lib.rs for usage examples.
-/// 
+
 impl Structure2PlotBuilder<Vec<Token>> for Conll2Plot {
 
     fn new(structure: Vec<Token>) -> Self {
         
         Self {
             tokens: structure,
-            y_shift: 2.0
+            y_shift: 2.0        // this constant means two vertical lines are saved for pos and form
         }
     }
 
+    /// See examples on how to use this function on lib.rs
     fn build(&mut self, save_to: &str) -> Result<(), Box<dyn Error>> {
 
-        // first run the forward part: extraction of the plotting data through recursion
+        // extraction of the plotting data through recursion
         let walk_args: Vec<[f32; 2]> = vec![[0.0, 0.0]; (&self.tokens).len()];
         let plot_data_vec: Vec<ConllPlotData> = Vec::new();
         let walk_data: WalkData = WalkData { conll_plot_data: plot_data_vec, walk_args: walk_args };
         let mut accumulator = Accumulator::WD(walk_data);
         self.walk(None, &mut accumulator)?;
 
-        // return to walk data
+        // return to walk data from the general enum accumulator
         let walk_data = <&mut WalkData>::try_from(&mut accumulator)?;
 
-        // determine general plot settings for the example
+        // determine general plot settings for the dependency
         let seq_length = (&self.tokens).len() as f32;
         let built_height = self.y_shift + (&walk_data).walk_args[0..seq_length as usize].concat().iter().map(|x| *x as usize).max().unwrap() as f32;
         let total_units = 2*DIM_CONST / (seq_length + built_height) as u32;
@@ -85,7 +83,6 @@ impl Structure2PlotBuilder<Vec<Token>> for Conll2Plot {
         let x_spec = std::ops::Range{start: -0.1 as f32, end: seq_length};
         let y_spec = std::ops::Range{start: 0.0 as f32, end: 10.0 as f32};
 
-        // x axis is removed thus doesn't need much space compared to y axis
         let mut chart = ChartBuilder::on(&root_area)
         .margin(MARGIN)
         .x_label_area_size(10)
@@ -109,10 +106,6 @@ impl Structure2PlotBuilder<Vec<Token>> for Conll2Plot {
 }
 
 
-///
-/// This is a plotting helper implementation of the Structure2PlotPlotter trait.
-/// The methods should not be called direcly by the user, rather used by the builder.
-/// 
 impl Structure2PlotPlotter<ConllPlotData> for Conll2Plot {
 
     fn plot<'a, DB, CT>(&self, chart: &mut ChartContext<'a, DB, CT>, plot_data_vec: Vec<ConllPlotData>, font_style: (&str, i32)) -> Result<(), Box<dyn Error>>
@@ -163,6 +156,8 @@ impl WalkTree for Conll2Plot {
 
     fn get_root_element(&self) -> Result<Element, Box<dyn Error>> {
         
+        // the root element in a conll is the element that is not the child of any other token,
+        // thus the head of the root is itself, that what we check.
         let mut root_id: Option<f32> = None;
         for i in 0..(&self.tokens).len() {
 
@@ -205,7 +200,7 @@ impl WalkTree for Conll2Plot {
 
         }
 
-        // sort children by distance (ascending order)
+        // sort children by distance (ascending order), they will be handled from closer to farther from the current token
         root_children_ids.sort_by(|x, y| x.1.cmp(&y.1));
         let children_ids = root_children_ids.iter().map(|(token_id, _)| 
         Element::TID(&self.tokens[*token_id as usize])).collect::<>();
@@ -250,6 +245,11 @@ impl WalkActions for Conll2Plot {
 
 impl Conll2Plot {
 
+    // most of the calculation regarding the locations is done in this helper method, since
+    // it is not similar to constituency was kept exclusive to this structure.
+    // The main idea of calculation is that a vector of counts is updated dynamically, and stores the
+    // height that the next token's arrow should be drawn on, based on the entry and finish position on x
+    // axis. This helpes drawing arrows on minimal height that's needed to not have arrow clashes.
     fn extract(&self, token: &Token, walk_data: &mut WalkData) -> ConllPlotData {
 
         let token_head = token.get_token_head();
