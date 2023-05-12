@@ -122,7 +122,7 @@ impl Token {
 }
 
 /// A String2StructureBuilder sturct, mainly holds the tokens object. This type will implement the String2StructureBuilder,
-/// with a dependency vec string as Input and a made Vec<Token> as output.
+/// with a dependency vec string as Input and a made Vec-Token- as output.
 #[derive(Clone)]
 pub struct String2Conll {
     tokens: Vec<Token>
@@ -161,7 +161,7 @@ impl String2StructureBuilder for String2Conll {
     }
 
     /// 
-    /// A recursive method that builds a mutable Vec<Token> structure from a dependency vec string
+    /// A recursive method that builds a mutable Vec-Token- structure from a dependency vec string
     /// Returns Ok if the process was succesful (error otherwise)
     /// 
     /// # Examples

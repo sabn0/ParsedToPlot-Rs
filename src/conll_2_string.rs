@@ -17,7 +17,7 @@ pub struct Conll2String {
 
 impl Conll2String {
 
-    /// A method to retrieve the dependency conll after building it from the Vec<token>.
+    /// A method to retrieve the dependency conll after building it from the Vec-token-.
     /// Can be called only after build() has been called. See example on lib.rs.
     pub fn get_conll(self) -> Vec<String> {
         assert!(self.output.is_some(), "build most be evoked before retrival of conll");
@@ -141,7 +141,7 @@ mod tests {
 
     fn inverse_check(example: Vec<String>, save_to: String) -> Vec<String> { 
 
-        // check by building vec<token> and returning to the original input, expecting x = f(f^-1(x))
+        // check by building Vec-Token- and returning to the original input, expecting x = f(f^-1(x))
 
         // forward
         let mut dependency = example;

@@ -14,7 +14,7 @@ const CLOSE_BRACKETS: char = ')';
 const OPEN_BRACKETS: char = '(';
 
 /// A String2Tree struct, mainly holds the tree object. This type will implement the String2StructureBuilder, 
-/// with a constituency String as Input and a made Tree<String> as output.
+/// with a constituency String as Input and a made Tree-String- as output.
 pub struct String2Tree {
     tree: Tree<String>,
     parent_node_id: Option<NodeId>,
@@ -79,7 +79,7 @@ impl String2StructureBuilder for String2Tree {
     }
 
     /// 
-    /// A recursive method that builds a mutable Tree<String> structure from a constituency string
+    /// A recursive method that builds a mutable Tree-String- structure from a constituency string
     /// Returns Ok if the process was succesful (error otherwise)
     ///
     /// # Examples

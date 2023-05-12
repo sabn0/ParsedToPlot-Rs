@@ -107,12 +107,14 @@ when:
 * INPUT_FILE should be replaced with a path to a txt file with inputs.
 * OUTPUT_PATH should be replaced with a path to a requested output dir.
  
-For example, you can enter multiple constituencies by using the following command + code (the dependency equivalent is similar) :
+For example, you can enter multiple constituencies by using the following command:
  
 ```text
 cargo run c constituencies.txt Output 
 ```
- 
+
+With the following usage:
+
 ```rust
 use parsed_to_plot::Config;
 use parsed_to_plot::String2Tree;
@@ -149,12 +151,13 @@ for (i, mut constituency) in sequences.into_iter().enumerate() {
 ```
 
 Those will save png images of constituency trees drawn for the inputs in constituencies.txt, in an Output dir.
- 
+The dependency equivalent is similar.
+
 ###  String reconstruction
  
 As of version 0.2.0 you can create a string from a built structure, tree or Vec<Token>. This can be useful, for example,
 to assert the built tree made from a string x, by making sure that x = Structure2String(String2Structure(x)).
-For example, on a dependency string (the constituency equivalent is similar) :
+For example, on a dependency string (constituency equivalent is similar):
  
 ```rust
 //  0   The the det _   _   1   det   _   _
