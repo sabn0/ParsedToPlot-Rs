@@ -1,3 +1,9 @@
 /target
 /Cargo.lock
-/todo.txt
+
+# ignoring txt extensions
+*.txt
+
+# allowing examples
+!Input/conll.txt
+!Input/constituencies.txt
