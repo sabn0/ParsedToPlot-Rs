@@ -114,7 +114,7 @@
 //! // collect arguments from command line 
 //! let args: Vec<String> = env::args().collect();
 //! // note: your command line args should translate to something similar to the following:
-//! let args: Vec<String> = ["PROGRAM_NAME", "c", "Input/constituencies.txt", "ConOutput"].map(|x| x.to_string()).to_vec();
+//! // let args: Vec<String> = ["PROGRAM_NAME", "c", "Input/constituencies.txt", "ConOutput"].map(|x| x.to_string()).to_vec();
 //! 
 //! // run configuration protocol and inspectations
 //! let sequences = match Config::new(&args) {
