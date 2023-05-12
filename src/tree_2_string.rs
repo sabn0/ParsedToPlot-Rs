@@ -24,7 +24,7 @@ impl Tree2String {
 
     /// A method to retrieve the constituency string after building it from the tree.
     /// Can be called only after build() has been called. See example on lib.rs.
-    fn get_constituency(self, inverse: bool) -> String {
+    pub fn get_constituency(self, inverse: bool) -> String {
 
         assert!(self.output.is_some(), "build() most be evoked before retrival of constituency");
         let constituency = self.output.unwrap().clone();

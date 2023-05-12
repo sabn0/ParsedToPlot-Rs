@@ -19,7 +19,7 @@ impl Conll2String {
 
     /// A method to retrieve the dependency conll after building it from the Vec<token>.
     /// Can be called only after build() has been called. See example on lib.rs.
-    fn get_conll(self) -> Vec<String> {
+    pub fn get_conll(self) -> Vec<String> {
         assert!(self.output.is_some(), "build most be evoked before retrival of conll");
         let conll = self.output.unwrap().clone();
         conll
