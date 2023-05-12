@@ -2,7 +2,7 @@
 
 ![example workflow](https://github.com/Sabn0/ParsedToPlot-Rs/actions/workflows/rust.yml/badge.svg)
 ![rust version](https://img.shields.io/badge/rust-1.67.1-blue)
-![crates.io](https://img.shields.io/crates/parsed_to_plot.svg)
+[![crates.io](https://img.shields.io/crates/v/parsed_to_plot.svg])](https://crates.io/crates/parsed_to_plot)
 
 Plots constituency trees and dependency trees given by strings.
 
