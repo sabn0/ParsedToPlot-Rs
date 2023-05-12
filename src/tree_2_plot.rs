@@ -8,43 +8,39 @@ use plotters::{prelude::*, style::text_anchor::*};
 use std::collections::HashMap;
 use std::error::Error;
 use std::ops::Deref;
-use crate::generic_traits::generic_traits::{Structure2PlotBuilder, Structure2PlotPlotter, WalkActions, WalkTree};
-use crate::sub_tree_children::sub_tree_children::SubChildren;
-use crate::generic_enums::{Accumulator, Element};
 
+use super::generic_enums::{Accumulator, Element};
+use super::sub_tree_children::sub_tree_children::SubChildren;
+use super::generic_traits::generic_traits::{Structure2PlotBuilder, Structure2PlotPlotter, WalkActions, WalkTree};
 
 const DIM_CONST: usize = 640;
 const FONT_CONST: f32 = 0.0267;
 const FONT_SIZE: u32 = 15;
-const INIT_LEFT_BOUND: f32 = -5.0;  // left and right bound are arbitrary
+const INIT_LEFT_BOUND: f32 = -5.0;  // left and right bound are arbitrary, not shown on plot, only used for numeric ratios
 const INIT_RIGHT_BOUND: f32 = 5.0;
 const Y_AX_LABEL: &str = "Depth";
 
-/// A struct that wraps the needed fileds to plot a node
+// A struct that wraps the needed fields to plot a node - the positional location on the plot and the label.
 #[derive(Clone, Debug)]
-pub struct TreePlotData {
+pub(in crate) struct TreePlotData {
     positional_args: [f32; 6],  // save x1 y1 x2 y2 left_bound right_bound
-    label_arg: String,           // save label
+    label_arg: String,          // save label
 }
 
 /*
 Note: Options & Results are mainly handled implicitly (unwrap) during this module.
 The reason is that this module is based on two components:
-1) The output of string_2_tree, in which Options & Results are aready handled explictly. 
+1) The output of string_2_tree, in which Options & Results are handled explictly. 
 2) It makes a relative simple line series and point series.
 */
 
-/// A struct that wraps the needed fileds to plot a tree
+/// A Tree2Plot struct, mainly holds the tree object. This type will implement Structure2PlotBuilder, Structure2PlotPlotter,
+/// WalkTree and WalkActions, with an ultimate goal of saving a plot of the tree to file.
  pub struct Tree2Plot {
     tree: Tree<String>,
     node_id2n_sub_children: HashMap<NodeId, usize>
 }
 
-///
-/// This is a building process of a plot.
-/// Called after using String2Structure.
-/// See lib.rs for usage examples.
-/// 
 impl Structure2PlotBuilder<Tree<String>> for Tree2Plot {
 
     fn new(mut structure: Tree<String>) -> Self {
@@ -52,7 +48,7 @@ impl Structure2PlotBuilder<Tree<String>> for Tree2Plot {
         // extract number of leaves for each node's sub tree
         let node_id2n_sub_children = match structure.get_sub_children(true) {
             Ok(node_id2n_sub_children) => node_id2n_sub_children,
-            Err(_e) => panic!("could not infer sub children from tree")
+            Err(e) => panic!("{}", e)
         };
 
         Self {
@@ -61,8 +57,7 @@ impl Structure2PlotBuilder<Tree<String>> for Tree2Plot {
         }
     }
 
-
-
+    /// See examples on how to use this function on lib.rs
     fn build(&mut self, save_to: &str) -> Result<(), Box<dyn Error>> {
         
         // run the recursive extraction
@@ -112,10 +107,7 @@ impl Structure2PlotBuilder<Tree<String>> for Tree2Plot {
 
 }
 
-///
-/// This is a plotting helper implementation of the Structure2PlotPlotter trait.
-/// The methods should not be called direcly by the user, rather used by the builder.
-/// 
+
 impl Structure2PlotPlotter<TreePlotData> for Tree2Plot {
 
     fn plot<'a, DB, CT>(&self, chart: &mut ChartContext<'a, DB, CT>, plot_data_vec: Vec<TreePlotData>, font_style: (&str, i32)) -> Result<(), Box<dyn Error>> 
@@ -130,7 +122,7 @@ impl Structure2PlotPlotter<TreePlotData> for Tree2Plot {
 
         for plot_data in plot_data_vec {
             
-            // extracting plot location
+            // extracting plot location 
             let label = &plot_data.label_arg;
             let [x1, y1, x2, y2]: [f32; 4] = plot_data.positional_args[..4].try_into().unwrap();
 
@@ -161,22 +153,26 @@ impl WalkTree for Tree2Plot {
         let root_node_id = self.tree.root_node_id().ok_or("tree is empty")?;
         let root_element_id = Element::NID(root_node_id);
         Ok(root_element_id)
-
     }
 
     fn get_children_ids(&self, element_id: Element) -> Result<Vec<Element>, Box<dyn Error>> {
+
         let node_id = <&NodeId>::try_from(element_id)?;
-        let children_ids = self.tree.children_ids(node_id)?.map(|x| Element::NID(x)).collect::<Vec<Element>>();
+        let children_ids = self.tree.children_ids(node_id)?.map(|x| Element::NID(x))
+        .collect::<Vec<Element>>();
         return Ok(children_ids)
     }
 
 }
 
+// Walk Action specficies consice actions, used during the DFS walk in TreeWalk. Some of the actions
+// are not needed in this implementation.
 impl WalkActions for Tree2Plot {
 
     fn init_walk(&self, element_id: Element, data: &mut Accumulator) -> Result<(), Box<dyn Error>> 
     {
 
+        // A convertion from the general enum Element to the spcecific implementation element(NodeId)
         let root_node_id = <&NodeId>::try_from(element_id)?;
 
         // get root node label and send with initial positional args to plot
@@ -188,6 +184,7 @@ impl WalkActions for Tree2Plot {
             label_arg: root_node_data.to_owned()
         };
 
+        // A convertion from the general enum Accumulator to the spcecific implementation accumulator(Vec<TreePlotData>) 
         let data_vec = <&mut Vec<TreePlotData>>::try_from(data)?;
         data_vec.push(root_plot_args);
 
@@ -214,10 +211,9 @@ impl WalkActions for Tree2Plot {
         let node_id = <&NodeId>::try_from(element_id)?;
         let n_leaves = *self.node_id2n_sub_children
         .get(node_id)
-        .ok_or("didn't find node id in mapping to sub children")? as f32;
+        .ok_or("didn't find node_id in mapping to sub_children")? as f32;
         parameters[4] = n_leaves;
 
-        // iterate over children, save plotting data for each child recursivly
         let space_allocated: f32 = 0.0;
         parameters[5] = space_allocated;
 
@@ -239,7 +235,6 @@ impl WalkActions for Tree2Plot {
 
         // calculate positional args for this child
         // for positional computation, get the total number of sub_children that are leaves for this node
-
         let c_leaves = *self.node_id2n_sub_children.get(child_node_id)
         .expect("didn't find node id in mapping to sub children") as f32;
         
