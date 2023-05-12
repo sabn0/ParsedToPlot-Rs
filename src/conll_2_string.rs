@@ -1,21 +1,25 @@
 
-use crate::{string_2_conll::Token, Structure2PlotBuilder, generic_traits::generic_traits::{WalkActions, WalkTree}, generic_enums::{Accumulator, Element}};
-use crate::config::configure_structures::Saver;
+//
+// Under MIT license
+//
 
+use super::string_2_conll::Token;
+use super::config::configure_structures::Saver;
+use super::generic_enums::{Accumulator, Element};
+use super::generic_traits::generic_traits::{WalkActions, WalkTree, Structure2PlotBuilder};
+
+/// A Conll2String struct, mainly holds the vec tokens object. This type will implement Structure2PlotBuilder,
+/// WalkTree and WalkActions, with an ultimate goal of saving a dependency to file.
 pub struct Conll2String {
     tokens: Vec<Token>,
     output: Option<Vec<String>>
 }
 
-// The use of WalkTree + WalkActions is redundant in Conll2String, because the original string
-// can be easily infered from the tokens. Hnece most of this implementation is empty.
-// get_root_element returns the first token of tokens for compliancy, then init_walk computes
-// the accumulator entirly. In a second iteration, get_children_ids returns an empty vector
-// for the random first token that was taken, and the program goes to termination condition.
-
 impl Conll2String {
 
-    pub fn get_conll(self) -> Vec<String> {
+    /// A method to retrieve the dependency conll after building it from the Vec<token>.
+    /// Can be called only after build() has been called. See example on lib.rs.
+    fn get_conll(self) -> Vec<String> {
         assert!(self.output.is_some(), "build most be evoked before retrival of conll");
         let conll = self.output.unwrap().clone();
         conll
@@ -47,6 +51,11 @@ impl Structure2PlotBuilder<Vec<Token>> for Conll2String {
     }
 }
 
+// The use of WalkTree + WalkActions is almost redundant in Conll2String, because the original string
+// can be easily infered from the tokens. Hence most of this implementation is empty.
+// get_root_element returns the first token of tokens for compliancy, then init_walk computes
+// the accumulator entirly. In a second iteration, get_children_ids returns an empty vector
+// for the arbitrary first token that was taken, and the program goes to termination condition.
 impl WalkTree for Conll2String {
     fn get_root_element(&self) -> Result<Element, Box<dyn std::error::Error>> {
         let token_id = (&self.tokens).get(0).ok_or("conll is empty")?;
@@ -108,8 +117,9 @@ impl WalkActions for Conll2String {
 #[cfg(test)]
 mod tests {
 
-    use crate::{String2StructureBuilder, Structure2PlotBuilder, String2Conll};
-    use crate::Conll2String;
+    use super::Conll2String;
+    use super::Structure2PlotBuilder;
+    use crate::{String2StructureBuilder, String2Conll};
 
     #[test]
     fn conll() {
@@ -131,7 +141,7 @@ mod tests {
 
     fn inverse_check(example: Vec<String>, save_to: String) -> Vec<String> { 
 
-        // check by building tree and returning to the original input
+        // check by building vec<token> and returning to the original input, expecting x = f(f^-1(x))
 
         // forward
         let mut dependency = example;
