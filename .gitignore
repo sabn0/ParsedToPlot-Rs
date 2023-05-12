@@ -7,3 +7,10 @@
 # allowing examples
 !Input/conll.txt
 !Input/constituencies.txt
+
+# ignoring png extensions
+*.png
+
+# allowing examples
+!Output/constituency_plot.png
+!Output/dependency_plot.png
